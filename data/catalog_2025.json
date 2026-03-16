@@ -1,0 +1,18 @@
+{
+  "type": "Catalog",
+  "id": "01f040eb-eb5c-4219-ab0a-90aafffc2d3c",
+  "stac_version": "1.0.0",
+  "description": "One Tree Island Reef 2025",
+  "links": [
+    {
+      "rel": "root",
+      "href": "./catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "./PSScene/PSScene_collection.json",
+      "type": "application/json"
+    }
+  ]
+}

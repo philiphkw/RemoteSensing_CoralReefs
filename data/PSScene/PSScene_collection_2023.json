@@ -1,0 +1,100 @@
+{
+  "type": "Collection",
+  "id": "20cf0b90-20df-4368-b5b1-83f0927bf67b: PSScene",
+  "stac_version": "1.0.0",
+  "description": "PSScene",
+  "links": [
+    {
+      "rel": "root",
+      "href": "../catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231218_231332_80_24c7.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231110_231221_53_242e.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231012_235250_49_2475.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230526_230320_51_242b.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230107_235022_40_2414.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230910_000822_44_2426.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230211_234024_34_24a5.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230806_231123_30_24ce.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230706_231126_50_24a8.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230418_230938_25_24c0.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230310_235909_57_2413.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230616_230738_24_2458.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json"
+    }
+  ],
+  "pl:item_type": "PSScene",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          152.03894807,
+          -23.51346633,
+          152.09857768,
+          -23.47996
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2023-01-07T23:50:22.402885Z",
+          "2023-12-18T23:13:32.805106Z"
+        ]
+      ]
+    }
+  },
+  "license": "proprietary"
+}
