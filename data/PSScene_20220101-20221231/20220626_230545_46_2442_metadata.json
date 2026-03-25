@@ -1,0 +1,73 @@
+{
+    "id": "20220626_230545_46_2442",
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    152.05547291290367,
+                    -23.488743227186806
+                ],
+                [
+                    152.06299568,
+                    -23.48682927
+                ],
+                [
+                    152.07062366,
+                    -23.48389731
+                ],
+                [
+                    152.08021573,
+                    -23.47996
+                ],
+                [
+                    152.08661044,
+                    -23.48222187
+                ],
+                [
+                    152.09195459,
+                    -23.48741565
+                ],
+                [
+                    152.09653614371692,
+                    -23.49648097959106
+                ],
+                [
+                    152.05547291290367,
+                    -23.488743227186806
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "acquired": "2022-06-26T23:05:45.464686Z",
+        "anomalous_pixels": 0,
+        "clear_confidence_percent": 90,
+        "clear_percent": 100,
+        "cloud_cover": 0.0,
+        "cloud_percent": 0,
+        "ground_control": true,
+        "gsd": 4,
+        "heavy_haze_percent": 0,
+        "instrument": "PSB.SD",
+        "item_type": "PSScene",
+        "light_haze_percent": 0,
+        "pixel_resolution": 3,
+        "provider": "planetscope",
+        "published": "2024-06-29T00:30:47Z",
+        "publishing_stage": "finalized",
+        "quality_category": "standard",
+        "satellite_azimuth": 280.1,
+        "satellite_id": "2442",
+        "shadow_percent": 0,
+        "snow_ice_percent": 0,
+        "strip_id": "5742159",
+        "sun_azimuth": 44.4,
+        "sun_elevation": 27.6,
+        "updated": "2024-06-29T00:50:53Z",
+        "view_angle": 3.1,
+        "visible_confidence_percent": 90,
+        "visible_percent": 100
+    }
+}
