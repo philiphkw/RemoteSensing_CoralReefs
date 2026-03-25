@@ -1,0 +1,74 @@
+[
+    {
+        "type": "Catalog",
+        "id": "20cf0b90-20df-4368-b5b1-83f0927bf67b",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2023",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "c6aa24f2-d720-47d8-bb8f-4c42acab492d",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2024",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "01f040eb-eb5c-4219-ab0a-90aafffc2d3c",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2025",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "eb27e44d-6dbd-4516-9ccb-681a2836c97a",
+        "stac_version": "1.0.0",
+        "description": "One-tree island Reef images",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    }
+]

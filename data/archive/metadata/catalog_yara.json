@@ -1,0 +1,18 @@
+{
+  "type": "Catalog",
+  "id": "eb27e44d-6dbd-4516-9ccb-681a2836c97a",
+  "stac_version": "1.0.0",
+  "description": "One-tree island Reef images",
+  "links": [
+    {
+      "rel": "root",
+      "href": "./catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "./PSScene/PSScene_collection.json",
+      "type": "application/json"
+    }
+  ]
+}
