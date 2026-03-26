@@ -1,0 +1,18 @@
+{
+  "type": "Catalog",
+  "id": "f1b6a46e-931c-455f-b47c-0a28c653fb5d",
+  "stac_version": "1.0.0",
+  "description": "1st Batch 20220101_20230101",
+  "links": [
+    {
+      "rel": "root",
+      "href": "./catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "./PSScene/PSScene_collection.json",
+      "type": "application/json"
+    }
+  ]
+}

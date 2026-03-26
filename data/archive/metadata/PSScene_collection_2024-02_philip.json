@@ -1,0 +1,45 @@
+{
+  "type": "Collection",
+  "id": "02b29982-10ed-4567-ba7f-7a560014b741: PSScene",
+  "stac_version": "1.0.0",
+  "description": "PSScene",
+  "links": [
+    {
+      "rel": "root",
+      "href": "../catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240226_231537_42_24ba.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json"
+    }
+  ],
+  "pl:item_type": "PSScene",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          152.03894807,
+          -23.51346633,
+          152.09857768,
+          -23.47996
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2024-02-26T23:15:37.425366Z",
+          "2024-02-26T23:15:37.425366Z"
+        ]
+      ]
+    }
+  },
+  "license": "proprietary"
+}
