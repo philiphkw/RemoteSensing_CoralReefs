@@ -1,0 +1,113 @@
+{
+    "id": "20250725_003126_61_2540",
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    152.04262396,
+                    -23.49524782
+                ],
+                [
+                    152.04696323,
+                    -23.49114332
+                ],
+                [
+                    152.05509365,
+                    -23.48883972
+                ],
+                [
+                    152.06299568,
+                    -23.48682927
+                ],
+                [
+                    152.07062366,
+                    -23.48389731
+                ],
+                [
+                    152.08021573,
+                    -23.47996
+                ],
+                [
+                    152.08661044,
+                    -23.48222187
+                ],
+                [
+                    152.09195459,
+                    -23.48741565
+                ],
+                [
+                    152.09802957,
+                    -23.49943596
+                ],
+                [
+                    152.09857768,
+                    -23.50663924
+                ],
+                [
+                    152.09686433,
+                    -23.51189803
+                ],
+                [
+                    152.08232417,
+                    -23.51346633
+                ],
+                [
+                    152.06969827,
+                    -23.51014301
+                ],
+                [
+                    152.06004556,
+                    -23.50917214
+                ],
+                [
+                    152.04884515,
+                    -23.50879873
+                ],
+                [
+                    152.03894807,
+                    -23.50517656
+                ],
+                [
+                    152.03933525,
+                    -23.50102742
+                ],
+                [
+                    152.04262396,
+                    -23.49524782
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "acquired": "2025-07-25T00:31:26.613748Z",
+        "anomalous_pixels": 0,
+        "clear_confidence_percent": 87,
+        "clear_percent": 99,
+        "cloud_cover": 0.01,
+        "cloud_percent": 0,
+        "ground_control": true,
+        "gsd": 3.9,
+        "heavy_haze_percent": 0,
+        "instrument": "PSB.SD",
+        "item_type": "PSScene",
+        "light_haze_percent": 0,
+        "pixel_resolution": 3,
+        "provider": "planetscope",
+        "published": "2025-07-25T04:12:03Z",
+        "publishing_stage": "finalized",
+        "quality_category": "standard",
+        "satellite_azimuth": 281.9,
+        "satellite_id": "2540",
+        "shadow_percent": 0,
+        "snow_ice_percent": 0,
+        "strip_id": "8212618",
+        "sun_azimuth": 28.1,
+        "sun_elevation": 41.9,
+        "updated": "2025-07-26T04:33:52Z",
+        "view_angle": 1.8,
+        "visible_confidence_percent": 66,
+        "visible_percent": 100
+    }
+}
