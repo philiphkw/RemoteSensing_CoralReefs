@@ -1,0 +1,230 @@
+{
+  "type": "Collection",
+  "id": "eb27e44d-6dbd-4516-9ccb-681a2836c97a: PSScene",
+  "stac_version": "1.0.0",
+  "description": "PSScene",
+  "links": [
+    {
+      "rel": "root",
+      "href": "../catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250621_003131_50_2547.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230627_231212_60_24c3.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240729_001123_18_24d5.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231029_235325_75_2486.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250828_003836_55_24d3.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20241127_233242_26_24c2.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240828_000950_95_24ee.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240209_000045_46_247a.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230818_235012_38_2481.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251210_003335_21_24fa.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240629_231805_90_24b6.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231204_231222_65_24c7.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20231129_231353_25_24c9.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230818_235010_28_2481.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251014_003911_34_24df.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250725_003126_61_2540.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240425_001145_67_24b7.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251024_003027_47_250b.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250527_003034_81_2533.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230218_230113_01_2449.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20241127_233244_11_24c2.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240531_001103_66_24f3.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251124_004347_64_24ed.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251014_003913_40_24df.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250305_234127_70_24b3.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20241031_001207_66_24ed.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20241227_001335_76_24e1.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20251024_003029_43_250b.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250117_233520_75_2417.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230529_234454_39_2424.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230709_233921_49_2276.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240425_001143_39_24b7.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240327_232734_98_242d.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230927_234810_83_2486.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20250527_003032_67_2533.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20240922_001243_30_24f4.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230329_234202_70_247a.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "item",
+      "href": "./20230128_230440_83_241f.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json"
+    }
+  ],
+  "pl:item_type": "PSScene",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          152.08944702,
+          -23.50882149,
+          152.09262085,
+          -23.50619507
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "2023-01-28T23:04:40.830155Z",
+          "2025-12-10T00:33:35.210219Z"
+        ]
+      ]
+    }
+  },
+  "license": "proprietary"
+}

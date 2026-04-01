@@ -1,0 +1,18 @@
+{
+  "type": "Catalog",
+  "id": "c6aa24f2-d720-47d8-bb8f-4c42acab492d",
+  "stac_version": "1.0.0",
+  "description": "One Tree Island Reef 2024",
+  "links": [
+    {
+      "rel": "root",
+      "href": "./catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "./PSScene/PSScene_collection.json",
+      "type": "application/json"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+    "id": "20221205_233632_34_2470",
+    "type": "Feature",
+    "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [
+                    152.05136315035742,
+                    -23.500539771839264
+                ],
+                [
+                    152.0539079699572,
+                    -23.48917565990797
+                ],
+                [
+                    152.05509365,
+                    -23.48883972
+                ],
+                [
+                    152.06299568,
+                    -23.48682927
+                ],
+                [
+                    152.07062366,
+                    -23.48389731
+                ],
+                [
+                    152.08021573,
+                    -23.47996
+                ],
+                [
+                    152.08661044,
+                    -23.48222187
+                ],
+                [
+                    152.09195459,
+                    -23.48741565
+                ],
+                [
+                    152.09802957,
+                    -23.49943596
+                ],
+                [
+                    152.09857768,
+                    -23.50663924
+                ],
+                [
+                    152.09770985680407,
+                    -23.50930285218926
+                ],
+                [
+                    152.05136315035742,
+                    -23.500539771839264
+                ]
+            ]
+        ]
+    },
+    "properties": {
+        "acquired": "2022-12-05T23:36:32.341778Z",
+        "anomalous_pixels": 0,
+        "clear_confidence_percent": 95,
+        "clear_percent": 100,
+        "cloud_cover": 0.0,
+        "cloud_percent": 0,
+        "ground_control": true,
+        "gsd": 4,
+        "heavy_haze_percent": 0,
+        "instrument": "PSB.SD",
+        "item_type": "PSScene",
+        "light_haze_percent": 0,
+        "pixel_resolution": 3,
+        "provider": "planetscope",
+        "published": "2022-12-06T01:47:14Z",
+        "publishing_stage": "finalized",
+        "quality_category": "standard",
+        "satellite_azimuth": 96.5,
+        "satellite_id": "2470",
+        "shadow_percent": 0,
+        "snow_ice_percent": 0,
+        "strip_id": "6124482",
+        "sun_azimuth": 94.2,
+        "sun_elevation": 61.6,
+        "updated": "2022-12-06T10:04:44Z",
+        "view_angle": 4.5,
+        "visible_confidence_percent": 96,
+        "visible_percent": 100
+    }
+}

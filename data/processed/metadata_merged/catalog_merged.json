@@ -1,0 +1,110 @@
+[
+    {
+        "type": "Catalog",
+        "id": "f1b6a46e-931c-455f-b47c-0a28c653fb5d",
+        "stac_version": "1.0.0",
+        "description": "1st Batch 20220101_20230101",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "20cf0b90-20df-4368-b5b1-83f0927bf67b",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2023",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "02b29982-10ed-4567-ba7f-7a560014b741",
+        "stac_version": "1.0.0",
+        "description": "OTIR 2024-02",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "c6aa24f2-d720-47d8-bb8f-4c42acab492d",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2024",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "01f040eb-eb5c-4219-ab0a-90aafffc2d3c",
+        "stac_version": "1.0.0",
+        "description": "One Tree Island Reef 2025",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    },
+    {
+        "type": "Catalog",
+        "id": "4aa302bc-2dde-4684-ab81-6dc3594b4d28",
+        "stac_version": "1.0.0",
+        "description": "2nd Batch 20220101_20230101",
+        "links": [
+            {
+                "rel": "root",
+                "href": "./catalog.json",
+                "type": "application/json"
+            },
+            {
+                "rel": "child",
+                "href": "./PSScene/PSScene_collection.json",
+                "type": "application/json"
+            }
+        ]
+    }
+]
