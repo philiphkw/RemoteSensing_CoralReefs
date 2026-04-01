@@ -27,7 +27,7 @@ def plot_pca_clusters(data, labels, gmm):
     ax.set_title(f'GMM Clustering ({config.GMM_COMPONENTS} components)')
     ax.legend(); ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(pjoin(config.GRAPHS_DIR, f'gmm_clusters_pca_{config.RUN_NAME}.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(pjoin(config.FIGURES_DIR, f'gmm_clusters_pca_{config.RUN_NAME}.png'), dpi=300, bbox_inches='tight')
     plt.show()
     return pca_result
 
@@ -42,5 +42,5 @@ def plot_spatial_map(spatial, name):
     plt.colorbar(im, ax=ax, label='Cluster ID', ticks=range(config.GMM_COMPONENTS))
     ax.set_title(f'2022 Classification ({config.GMM_COMPONENTS} classes)')
     plt.tight_layout()
-    plt.savefig(pjoin(config.GRAPHS_DIR, f'{name}.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(pjoin(config.FIGURES_DIR, f'{name}.png'), dpi=300, bbox_inches='tight')
     plt.show()

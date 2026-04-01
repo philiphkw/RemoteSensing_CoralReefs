@@ -3,9 +3,8 @@ from os.path import join as pjoin
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = pjoin(ROOT_DIR, 'data')
-RESULTS_DIR = pjoin(DATA_DIR, 'results')
-GRAPHS_DIR = pjoin(RESULTS_DIR, 'graphs')
-MODELS_DIR = pjoin(RESULTS_DIR, 'models')
+FIGURES_DIR = pjoin(DATA_DIR, r'reports\figures')
+MODELS_DIR = pjoin(DATA_DIR, 'models')
 
 FILE_PATTERN = r'raw\PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
 RESAMPLE_FREQ = 'MS'

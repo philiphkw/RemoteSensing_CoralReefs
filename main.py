@@ -12,8 +12,6 @@ from scripts.features import prepare_data
 from scripts.model import train_gmm, predict, print_cluster_distribution, save_model, save_labels
 from scripts.visualization import plot_pca_clusters, plot_spatial_map
 from scripts.lyzenga import apply_lyzenga
-from scripts.config import (PERCENTILE_LOWER, PERCENTILE_UPPER, GMM_COMPONENTS, 
-                            GMM_N_INIT, RESAMPLE_FREQ, RESAMPLE_AGG)
 import scripts.config as config
 import scripts.cache as cache
 
@@ -65,7 +63,7 @@ data_2022, mask_2022, scaler = cache.cache_numpy(
 )
 
 # ── Train ─────────────────────────────────────────────
-RUN_NAME = f"k{GMM_COMPONENTS}init{GMM_N_INIT}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}_{'-'.join([i[:2] for i in indices.keys()])}"
+RUN_NAME = f"k{config.GMM_COMPONENTS}init{config.GMM_N_INIT}_{config.RESAMPLE_FREQ}_{config.RESAMPLE_AGG}_{'-'.join([i[:2] for i in indices.keys()])}"
 config.RUN_NAME = RUN_NAME
 
 gmm = train_gmm(data_2022)
