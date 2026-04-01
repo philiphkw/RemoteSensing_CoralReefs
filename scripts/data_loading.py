@@ -2,6 +2,7 @@ import pandas as pd
 import rioxarray
 import xarray as xr
 from glob import glob
+from tqdm import tqdm
 from os.path import join as pjoin
 import scripts.config as config
 
@@ -12,7 +13,7 @@ def load_stack():
 
     print("Loading and stacking data...")
     arrays = []
-    for f, date in zip(files, dates):
+    for f, date in tqdm(zip(files, dates), total=len(files)):
         da = rioxarray.open_rasterio(f)
         da = da.assign_coords(time=date)
         arrays.append(da)
@@ -21,15 +22,12 @@ def load_stack():
 
 
 def extract_bands(stack):
-    print("Extracting bands and calculating indices...")
-    cb  = stack.sel(band=1).astype(float)  # coastal blue
-    blue = stack.sel(band=2).astype(float)
-    green = stack.sel(band=4).astype(float)
-    yellow = stack.sel(band=5).astype(float)
-    red = stack.sel(band=6).astype(float)
-    nir = stack.sel(band=8).astype(float)
+    print("Extracting raw bands...")
+    band_dict = {1: "cb", 2: "blue", 4: "green", 5: "yellow", 6: "red", 8: "nir"}
+    raw_bands = {}
+    for i, band_name in tqdm(zip(band_dict.keys(), band_dict.values()), total=len(band_dict)):
+        raw_bands[band_name] = stack.sel(band=i).astype(float)
 
-    raw_bands = {"cb": cb, "blue": blue, "green": green, "yellow": yellow, "red": red, "nir": nir}
     return raw_bands
 
 def calculate_indices(raw_bands, di_bands=None):

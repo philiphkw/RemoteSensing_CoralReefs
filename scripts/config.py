@@ -7,7 +7,7 @@ RESULTS_DIR = pjoin(DATA_DIR, 'results')
 GRAPHS_DIR = pjoin(RESULTS_DIR, 'graphs')
 MODELS_DIR = pjoin(RESULTS_DIR, 'models')
 
-FILE_PATTERN = r'PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
+FILE_PATTERN = r'raw\PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
 RESAMPLE_FREQ = 'MS'
 RESAMPLE_AGG = 'median'
 GMM_COMPONENTS = 10
