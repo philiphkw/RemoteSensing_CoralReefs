@@ -3,9 +3,9 @@ import joblib
 import numpy as np
 import xarray as xr
 from os.path import join as pjoin
-from scripts.config import DATA_DIR, MODELS_DIR
+import scripts.config as config
 
-INTERIM_DIR = pjoin(DATA_DIR, 'interim')
+INTERIM_DIR = pjoin(config.DATA_DIR, 'interim')
 os.makedirs(INTERIM_DIR, exist_ok=True)
 
 
@@ -53,7 +53,7 @@ def cache_numpy(name, compute_fn, force_recompute=False):
 
 def cache_model(name, compute_fn, force_recompute=False):
     """Load model from cache if exists, otherwise train and save."""
-    path = pjoin(MODELS_DIR, f'{name}.pkl')
+    path = pjoin(config.MODELS_DIR, f'{name}.pkl')
     
     if os.path.exists(path) and not force_recompute:
         print(f"✓ Loading cached {name} from models/")
