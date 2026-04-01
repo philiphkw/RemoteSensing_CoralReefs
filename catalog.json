@@ -1,0 +1,18 @@
+{
+  "type": "Catalog",
+  "id": "5baa8b5e-08d0-4054-8bc2-d7d16ee4e663",
+  "stac_version": "1.0.0",
+  "description": "Dennis",
+  "links": [
+    {
+      "rel": "root",
+      "href": "./catalog.json",
+      "type": "application/json"
+    },
+    {
+      "rel": "child",
+      "href": "./PSScene/PSScene_collection.json",
+      "type": "application/json"
+    }
+  ]
+}
