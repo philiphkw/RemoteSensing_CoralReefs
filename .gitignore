@@ -1,0 +1,14 @@
+# Data - never commit these
+data/interim/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+*.env
+.env
