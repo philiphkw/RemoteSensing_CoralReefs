@@ -1,5 +1,6 @@
 # Data - never commit these
 data/interim/
+data/external/
 
 # Python cache
 __pycache__/
