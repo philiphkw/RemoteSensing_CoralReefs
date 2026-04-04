@@ -1,102 +1,105 @@
 import os
-import sys
-import numpy as np
 os.environ['USE_PYGEOS'] = '0'
-
 path = os.getcwd()
-parent = os.sep.join(path.split(os.sep)[:-1])
-sys.path.append(parent)
+print(path)
 
-from scripts.data_loading import calculate_indices, load_stack, extract_bands
 from scripts.features import prepare_data
-from scripts.model import train_gmm, predict, print_cluster_distribution, save_model, save_labels
-from scripts.visualization import plot_pca_clusters, plot_spatial_map
-from scripts.lyzenga import apply_lyzenga
-import scripts.config as config
+from scripts.model import train_gmm, predict, save_labels_timeseries, print_cluster_distribution
+from scripts.data_loading import compute_bands_all
 import scripts.cache as cache
+import scripts.config as config
 
-# ── Load ──────────────────────────────────────────────
-stack = load_stack()
-raw_bands = extract_bands(stack)
-
-assert all(v is not None for v in config.LYZENGA_DW_VALUES.values()), \
-    "Fill in config.LYZENGA_DW_VALUES with deep-water reflectance values before running."
-
-# Load calibration zone pixels (from a homogeneous-bottom area)
-# Replace the block below with your actual calibration pixel extraction.
-regression_pixels = {
-    name: np.load(config.LYZENGA_REGRESSION_ZONE)[name]
-    for name in config.LYZENGA_BANDS
-}
-
-print("\nApplying Lyzenga water column correction...")
-di_bands = apply_lyzenga(
-    raw_bands=raw_bands,
-    dw_values=config.LYZENGA_DW_VALUES,
-    ki_kj_ratios=config.LYZENGA_KI_KJ,         # None → estimate from data
-    regression_pixels=regression_pixels,
-    use_bathy=False,                             # True if you have bathymetry
-    bathy=None,
+# ================== Preprocessing ==================
+bands_all = cache.cache_bands(
+    "bands_all",
+    compute_fn=lambda: compute_bands_all(
+        lyzenga=config.LYZENGA_ALG,
+    ),
+    force_recompute=config.FORCE_BANDS
 )
 
-indices = calculate_indices(raw_bands)
-bands_all = (
-    list(raw_bands.values()) +
-    list(di_bands.values()) +       # ← NEW: Lyzenga DI bands
-    list(indices.values())
-)
-
-x_size = bands_all[0].shape[1]
-y_size = bands_all[0].shape[2]
-
-# ── 2022 baseline (train scaler + GMM) ───────────────
-data_2022, mask_2022, scaler = cache.cache_numpy(
-    f'features_2022_{len(bands_all)}F_{config.RESAMPLE_FREQ}_{config.RESAMPLE_AGG}',
+# ================== 2022/2023 baseline (train scaler + GMM) ==================
+data_baseline, mask_baseline, scaler = cache.cache_data(
+    f'{config.BASELINE_NAME}_{len(bands_all)}F',
     compute_fn=lambda: prepare_data(
-        bands_all, year=2022,
+        bands_all, 
+        year=config.BASELINE_YEAR,
         resample_freq=config.RESAMPLE_FREQ,
         resample_agg=config.RESAMPLE_AGG,
         lower=config.PERCENTILE_LOWER,
         upper=config.PERCENTILE_UPPER
     ),
-    force_recompute=False
+    force_recompute=config.FORCE_BASELINE
 )
 
-# ── Train ─────────────────────────────────────────────
-RUN_NAME = f"k{config.GMM_COMPONENTS}init{config.GMM_N_INIT}_{config.RESAMPLE_FREQ}_{config.RESAMPLE_AGG}_{'-'.join([i[:2] for i in indices.keys()])}"
-config.RUN_NAME = RUN_NAME
-
-gmm = train_gmm(data_2022)
-labels_2022, probs_2022 = predict(gmm, data_2022)
-print_cluster_distribution(labels_2022)
-
-# ── Monthly data (reuse scaler from 2022) ─────────────
-data_monthly, mask_monthly, _ = cache.cache_numpy(
-    f'features_monthly_{len(bands_all)}F_{config.RESAMPLE_FREQ}_{config.RESAMPLE_AGG}',
+# ================== Monthly data (reuse scaler from 2022/2023) ==================
+data_monthly, mask_monthly, _ = cache.cache_data(
+    f'{config.MONTHLY_NAME}_{len(bands_all)}F',
     compute_fn=lambda: prepare_data(
         bands_all, 
         year=None, 
-        resample_freq='MS',
+        resample_freq=config.RESAMPLE_FREQ,
         resample_agg=config.RESAMPLE_AGG,
         scaler=scaler,
         lower=config.PERCENTILE_LOWER, 
         upper=config.PERCENTILE_UPPER
     ),
-    force_recompute=False
+    force_recompute=config.FORCE_MONTHLY
 )
 
-# ── Cache monthly predictions ────────────────────
+# ================== Train GMM Model ==================
+SUFFIX = f"_{len(bands_all)}F"
+
+print(f"[RUN_NAME] {config.RUN_NAME}{SUFFIX}")
+
+# config.N_SAMPLES = len(data_baseline)*0.1
+perc_sample = f"{config.N_SAMPLES/len(data_baseline):.3f}" if config.N_SAMPLES else ""
+sample_prefix = f"sample{perc_sample}pct_" if config.N_SAMPLES else ""
+
+gmm = cache.cache_model(
+    f'{sample_prefix}{config.GMM_NAME}{SUFFIX}',
+    compute_fn=lambda: train_gmm(
+        data_baseline, 
+        n_samples=config.N_SAMPLES, 
+        n_components=config.GMM_COMPONENTS, 
+        n_init=config.GMM_N_INIT),
+    force_recompute=config.FORCE_GMM
+)
+
+# ================== Get number of time steps ==================
+x_size = bands_all[list(bands_all.keys())[0]].shape[1]
+y_size = bands_all[list(bands_all.keys())[0]].shape[2]
+
+num_timesteps_monthly = len(mask_monthly) // (x_size * y_size)
+
+# ================== Predict ==================
 labels_monthly, probs_monthly = cache.cache_predictions(
-    f'predictions_monthly_{RUN_NAME}',
+    f'{sample_prefix}{config.PREDICTIONS_NAME}{SUFFIX}',
     compute_fn=lambda: predict(gmm, data_monthly),
-    force_recompute=False
+    force_recompute=config.FORCE_PREDICTIONS
 )
 
+print_cluster_distribution(labels_monthly)
 
-# ── Visualize & save ──────────────────────────────────
-pca_result = plot_pca_clusters(data_2022, labels_2022, gmm)
-plot_spatial_map(labels_2022, "labels_2022", mask_2022, x_size, y_size)
-save_model(gmm, "gmm_model")
-save_model(pca_result, "pca")
-save_labels(labels_2022, mask_2022, bands_all[0], "labels_2022")
-save_labels(labels_monthly, mask_monthly, bands_all[0], "labels_monthly")
+# Get the actual timestamps from one of your resampled bands
+ref_band = bands_all[list(bands_all.keys())[0]]
+timestamps = ref_band.sel(time=ref_band.time.dt.year.isin([2022, 2023, 2024]))\
+                     .resample(time=config.RESAMPLE_FREQ)\
+                     .median()\
+                     .time.values
+
+# ================== Save monthly predictions ==================
+spatial_labels_monthly = cache.cache_spatial_timeseries(
+    f'{sample_prefix}{config.SPATIAL_NAME}{SUFFIX}',
+    compute_fn=lambda: save_labels_timeseries(
+        labels=labels_monthly,
+        mask=mask_monthly,
+        reference_band=ref_band,
+        name=f'{sample_prefix}{config.SPATIAL_NAME}{SUFFIX}',
+        num_timesteps=num_timesteps_monthly,
+        timestamps=timestamps
+    ),
+    timestamps=timestamps,
+    reference_band=ref_band,
+    force_recompute=config.FORCE_SPATIAL
+)
