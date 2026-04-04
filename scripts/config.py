@@ -5,35 +5,57 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = pjoin(ROOT_DIR, 'data')
 FIGURES_DIR = pjoin(ROOT_DIR, r'reports\figures')
 MODELS_DIR = pjoin(ROOT_DIR, 'models')
+INTERIM_DIR = pjoin(DATA_DIR, 'interim')
+EXTERNAL_DIR = pjoin(DATA_DIR, 'external')
+DEM_FILE = "OTI_25cm_Q820_all_bathy_topo_DTM_refract_-1m_GM(bin,min,0.25,1).tif"
+
 
 FILE_PATTERN = r'raw\PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
 RESAMPLE_FREQ = 'MS'
 RESAMPLE_AGG = 'median'
+N_SAMPLES = None
 GMM_COMPONENTS = 10
 GMM_N_INIT = 3
 PERCENTILE_LOWER = 2
 PERCENTILE_UPPER = 98
-RUN_NAME = ""
+NO_DATA_VALUE = 0
 
-# ── Lyzenga water column correction ─────────────────────────────────────────
-# Mean reflectance values over an optically deep water zone (no bottom signal).
-# Must be measured from your specific image — sample a deep, clear-water area.
-# Only bands that penetrate water meaningfully are corrected:
-#   cb (coastal blue) penetrates deepest, blue next, green shallowest.
-#   Red and NIR are absorbed too quickly to carry bottom signal.
+
+BASELINE_YEAR = [2022, 2023]
+LYZENGA_ALG = True
+bathy_suffix = "_bathy" if LYZENGA_ALG else ""
+FORCE_RECOMPUTE = False
+
+
+if FORCE_RECOMPUTE == False:
+    # For manual toggling
+    FORCE_BANDS         = False
+    FORCE_BASELINE      = False
+    FORCE_MONTHLY       = False
+    FORCE_GMM           = False
+    FORCE_PREDICTIONS   = False
+    FORCE_SPATIAL       = False
+else:
+    FORCE_BANDS         = True
+    FORCE_BASELINE      = True
+    FORCE_MONTHLY       = True 
+    FORCE_GMM           = True
+    FORCE_PREDICTIONS   = True 
+    FORCE_SPATIAL       = True
+
+YEAR_STRING = ",".join(str(y) for y in BASELINE_YEAR)
+RUN_NAME = f"B({YEAR_STRING})_k{GMM_COMPONENTS}_init{GMM_N_INIT}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}{bathy_suffix}"
+BASELINE_NAME = f'baseline_data_{RUN_NAME}'
+MONTHLY_NAME = f'monthly_data_{RUN_NAME}'
+GMM_NAME = f'gmm_{RUN_NAME}'
+PREDICTIONS_NAME = f'predictions_monthly_{RUN_NAME}'
+SPATIAL_NAME = f'labels_monthly_{RUN_NAME}'
+
+
+# Lyzenga water column correction
+DEM_WATER_THRESHOLD = 0
+DEM_OUTLIER_THRESHOLD = -3000
 LYZENGA_BANDS = ['cb', 'blue', 'green']   # bands to apply correction to
- 
-LYZENGA_DW_VALUES = {
-    'cb':    400,   # ← replace with your deep-water mean for coastal blue band
-    'blue':  300,   # ← replace with your deep-water mean for blue band
-    'green': 100,   # ← replace with your deep-water mean for green band
-}
- 
-# Optional: pre-computed ki/kj ratios (set to None to estimate from data)
-# Format: {('band_i', 'band_j'): ratio}
-# Example: {('cb', 'blue'): 1.23, ('cb', 'green'): 1.87, ('blue', 'green'): 1.52}
+LYZENGA_DW_VALUES = {'cb': 400, 'blue': 300, 'green': 100}
 LYZENGA_KI_KJ = None
- 
-# Path to a .npy file containing pixel values from a homogeneous-bottom
-# calibration zone (used to estimate ki/kj if LYZENGA_KI_KJ is None).
 LYZENGA_REGRESSION_ZONE = pjoin(ROOT_DIR, r'scripts\lyzenga.py')

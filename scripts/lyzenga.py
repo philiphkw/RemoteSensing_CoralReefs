@@ -7,11 +7,73 @@ Reference:
 https://github.com/teongu/lyzenga1978/
 """
 
+import gc
+
 import numpy as np
 import xarray as xr
+import rioxarray
+import scripts.config as config
 from itertools import combinations
 from sklearn.linear_model import LinearRegression
 
+
+def dem_resampling(raw_bands, dem):
+    print(" - Resampling DEM to match raw bands...")
+    aoi = raw_bands['cb'].isel(time=0)
+
+    minx = float(aoi.x.min())
+    maxx = float(aoi.x.max())
+    miny = float(aoi.y.min())
+    maxy = float(aoi.y.max())
+
+    # Clip DEM to match
+    print("   - Clipping DEM to area of interest")
+    dem_aoi = dem.rio.clip_box(minx, miny, maxx, maxy)
+
+    # Mask outliers after resampling, not before
+    print("   - Removing extreme outliers from DEM")
+    dem_resampled = dem_aoi.copy().astype(float)
+    dem_resampled.values[dem_resampled.values < config.DEM_OUTLIER_THRESHOLD] = np.nan
+
+    # Resample DEM to match resolution of raw bands
+    print("   - Matching DEM resolution to raw bands")
+    dem_resampled = dem_resampled.rio.reproject_match(raw_bands['cb'])
+
+    del dem_aoi
+    gc.collect()
+
+    return dem_resampled
+
+def depth_regression_data(raw_bands, dem_resampled):
+    print(" - Preparing regression data for ki/kj estimation...")
+    regression_pixels = {}
+    for name in config.LYZENGA_BANDS:
+        print(f"   - Collapsing band to one time slice: {name}")
+        band_median = raw_bands[name].median(dim='time')
+        regression_pixels[name] = band_median.values.reshape(-1).astype(float)
+
+    dem_flat = dem_resampled.values[0].reshape(-1).astype(float)
+
+    # Filter to valid pixels
+    print("   - Creating valid pixel mask")
+    valid_mask = np.isfinite(regression_pixels['cb']) & \
+                np.isfinite(regression_pixels['blue']) & \
+                np.isfinite(regression_pixels['green']) & \
+                np.isfinite(dem_flat) & \
+                (dem_flat < config.DEM_WATER_THRESHOLD)  # only water (negative elevation)
+    
+    # Filter all arrays
+    for name in config.LYZENGA_BANDS:
+        print(f"   - Filtering for valid pixels in band: {name}")
+        regression_pixels[name] = regression_pixels[name][valid_mask]
+
+    print("   - Filtering for valid pixels in bathymetry")
+    depth_regression = dem_flat[valid_mask]
+
+    del valid_mask, dem_flat
+    gc.collect()
+
+    return depth_regression, regression_pixels
 
 # ── Step 1: Xi transformation ────────────────────────────────────────────────
 
@@ -61,6 +123,10 @@ def estimate_ki_kj_bathy(Xi: np.ndarray, Xj: np.ndarray,
 
     ki = slope(Xi)
     kj = slope(Xj)
+
+    del valid
+    gc.collect()
+
     return ki / kj
 
 
@@ -85,7 +151,8 @@ def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray) -> float:
     """
     valid = np.isfinite(Xi) & np.isfinite(Xj)
     reg = LinearRegression().fit(Xj[valid].reshape(-1, 1), Xi[valid])
-    return reg.coef_[0]
+    coeff = reg.coef_[0]
+    return coeff
 
 
 # ── Step 3: Compute depth-invariant index for a band pair ───────────────────
@@ -145,7 +212,7 @@ def apply_lyzenga(raw_bands: dict,
     Xi_bands = {}
     for name in band_names:
         Xi_bands[name] = compute_Xi(raw_bands[name], dw_values[name])
-        print(f"  ✓ Xi computed for {name}")
+        print(f"   - Xi computed for {name}")
 
     # ── ki/kj ratios ────────────────────────────────────────────────────────
     if ki_kj_ratios is None:
@@ -167,15 +234,18 @@ def apply_lyzenga(raw_bands: dict,
             else:
                 ratio = estimate_ki_kj_covariance(Xi_reg, Xj_reg)
             ki_kj_ratios[(name_i, name_j)] = ratio
-            print(f"  k{name_i}/k{name_j} = {ratio:.4f}")
+            print(f"   - k{name_i}/k{name_j} = {ratio:.4f}")
 
     # ── Depth-invariant indices ──────────────────────────────────────────────
     di_bands = {}
     for (name_i, name_j), ratio in ki_kj_ratios.items():
-        di_name = f"di_{name_i}_{name_j}"
+        di_name = f"di-{name_i}-{name_j}"
         di_bands[di_name] = depth_invariant_index(
             Xi_bands[name_i], Xi_bands[name_j], ratio
         )
-        print(f"  ✓ Depth-invariant index computed: {di_name}")
-
+        print(f"   - Depth-invariant index computed: {di_name}")
+    
+    del Xi_bands, regression_pixels 
+    gc.collect()
+    
     return di_bands
