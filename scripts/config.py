@@ -10,7 +10,6 @@ EXTERNAL_DIR = pjoin(DATA_DIR, 'external')
 DEM_FILE = "OTI_25cm_Q820_all_bathy_topo_DTM_refract_-1m_GM(bin,min,0.25,1).tif"
 
 
-FILE_PATTERN = r'raw\PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
 RESAMPLE_FREQ = 'MS'
 RESAMPLE_AGG = 'median'
 N_SAMPLES = None
