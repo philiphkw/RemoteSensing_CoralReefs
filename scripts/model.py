@@ -172,68 +172,38 @@ def save_labels_timeseries(labels, mask, reference_band, name, num_timesteps, ti
     
     return labels_4d  # shape: (num_timesteps, x, y)
 
-# def validate_silhouette(data, labels, sample_size=10000):
-#     """
-#     Silhouette score measures how well each point fits its cluster vs neighbouring clusters.
-#     Score ranges from -1 to 1:
-#         1.0  = perfect separation
-#         0.0  = overlapping clusters  
-#        -1.0  = points assigned to wrong cluster
-#     """
-#     print("\nCalculating silhouette score...")
-    
-#     # Silhouette is expensive on large datasets, so we sample
-#     if len(data) > sample_size:
-#         idx = np.random.choice(len(data), sample_size, replace=False)
-#         data_sample = data[idx]
-#         labels_sample = labels[idx]
-#     else:
-#         data_sample = data
-#         labels_sample = labels
 
-#     score = silhouette_score(data_sample, labels_sample)
-#     print(f"  Silhouette score: {score:.4f}")
-#     print(f"  Interpretation: ", end="")
-#     if score > 0.5:
-#         print("strong cluster structure")
-#     elif score > 0.25:
-#         print("moderate cluster structure")
-#     else:
-#         print("weak cluster structure — consider different k")
-#     return score
+def validate_stability(data, n_components=config.GMM_COMPONENTS, n_splits=5, sample_size=50000):
+    """
+    Stability check: trains GMM on random subsets of the data and measures
+    how consistent the cluster assignments are across runs.
+    High variance in BIC/AIC across splits = unstable clusters.
+    """
+    print(f"\nRunning stability check ({n_splits} splits)...")
 
+    bic_scores = []
+    aic_scores = []
 
-# def validate_stability(data, n_components=config.GMM_COMPONENTS, n_splits=5, sample_size=50000):
-#     """
-#     Stability check: trains GMM on random subsets of the data and measures
-#     how consistent the cluster assignments are across runs.
-#     High variance in BIC/AIC across splits = unstable clusters.
-#     """
-#     print(f"\nRunning stability check ({n_splits} splits)...")
+    for i in range(n_splits):
+        # Sample a subset
+        idx = np.random.choice(len(data), min(sample_size, len(data)), replace=False)
+        subset = data[idx]
 
-#     bic_scores = []
-#     aic_scores = []
+        gmm_i = GaussianMixture(n_components=n_components, random_state=i, n_init=3)
+        gmm_i.fit(subset)
 
-#     for i in range(n_splits):
-#         # Sample a subset
-#         idx = np.random.choice(len(data), min(sample_size, len(data)), replace=False)
-#         subset = data[idx]
+        bic_scores.append(gmm_i.bic(subset))
+        aic_scores.append(gmm_i.aic(subset))
 
-#         gmm_i = GaussianMixture(n_components=n_components, random_state=i, n_init=3)
-#         gmm_i.fit(subset)
+    bic_scores = np.array(bic_scores)
+    aic_scores = np.array(aic_scores)
 
-#         bic_scores.append(gmm_i.bic(subset))
-#         aic_scores.append(gmm_i.aic(subset))
+    print(f"  BIC — mean: {bic_scores.mean():.1f}, std: {bic_scores.std():.1f}, cv: {bic_scores.std()/abs(bic_scores.mean()):.4f}")
+    print(f"  AIC — mean: {aic_scores.mean():.1f}, std: {aic_scores.std():.1f}, cv: {aic_scores.std()/abs(aic_scores.mean()):.4f}")
+    print(f"  Interpretation: CV < 0.01 = stable, CV > 0.05 = unstable")
 
-#     bic_scores = np.array(bic_scores)
-#     aic_scores = np.array(aic_scores)
-
-#     print(f"  BIC — mean: {bic_scores.mean():.1f}, std: {bic_scores.std():.1f}, cv: {bic_scores.std()/abs(bic_scores.mean()):.4f}")
-#     print(f"  AIC — mean: {aic_scores.mean():.1f}, std: {aic_scores.std():.1f}, cv: {aic_scores.std()/abs(aic_scores.mean()):.4f}")
-#     print(f"  Interpretation: CV < 0.01 = stable, CV > 0.05 = unstable")
-
-#     return {"bic_mean": bic_scores.mean(), "bic_std": bic_scores.std(),
-#             "aic_mean": aic_scores.mean(), "aic_std": aic_scores.std()}
+    return {"bic_mean": bic_scores.mean(), "bic_std": bic_scores.std(),
+            "aic_mean": aic_scores.mean(), "aic_std": aic_scores.std()}
 
 
 # def validate_temporal(gmm, scaler, bands_all, resample_agg, lower=2, upper=98):
