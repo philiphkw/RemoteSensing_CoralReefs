@@ -27,15 +27,8 @@ print(f"Project root: {project_root}")
 # Add PROJECT ROOT to sys.path
 sys.path.insert(0, str(project_root))
 
-# from scripts.features import prepare_data
-# from scripts import model as M
-# from scripts.data_loading import compute_bands_all
-# from scripts import cache
-# from scripts import config 
 import config
-# import model as M
-# import data_loading
-# from features import prepare_data
+
 
 gmm = joblib.load(".//models//gmm_B(2022,2023)_k10_init3_MS_median_bathy_11F.pkl")
 tiff_path = ".//data//raw//PSScene//20240607_000749_84_24e5_3B_AnalyticMS_SR_8b_clip_philip.tif"

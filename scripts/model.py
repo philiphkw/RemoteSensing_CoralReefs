@@ -173,38 +173,6 @@ def save_labels_timeseries(labels, mask, reference_band, name, num_timesteps, ti
     return labels_4d  # shape: (num_timesteps, x, y)
 
 
-def validate_stability(data, n_components=config.GMM_COMPONENTS, n_splits=5, sample_size=50000):
-    """
-    Stability check: trains GMM on random subsets of the data and measures
-    how consistent the cluster assignments are across runs.
-    High variance in BIC/AIC across splits = unstable clusters.
-    """
-    print(f"\nRunning stability check ({n_splits} splits)...")
-
-    bic_scores = []
-    aic_scores = []
-
-    for i in range(n_splits):
-        # Sample a subset
-        idx = np.random.choice(len(data), min(sample_size, len(data)), replace=False)
-        subset = data[idx]
-
-        gmm_i = GaussianMixture(n_components=n_components, random_state=i, n_init=3)
-        gmm_i.fit(subset)
-
-        bic_scores.append(gmm_i.bic(subset))
-        aic_scores.append(gmm_i.aic(subset))
-
-    bic_scores = np.array(bic_scores)
-    aic_scores = np.array(aic_scores)
-
-    print(f"  BIC — mean: {bic_scores.mean():.1f}, std: {bic_scores.std():.1f}, cv: {bic_scores.std()/abs(bic_scores.mean()):.4f}")
-    print(f"  AIC — mean: {aic_scores.mean():.1f}, std: {aic_scores.std():.1f}, cv: {aic_scores.std()/abs(aic_scores.mean()):.4f}")
-    print(f"  Interpretation: CV < 0.01 = stable, CV > 0.05 = unstable")
-
-    return {"bic_mean": bic_scores.mean(), "bic_std": bic_scores.std(),
-            "aic_mean": aic_scores.mean(), "aic_std": aic_scores.std()}
-
 
 # def validate_temporal(gmm, scaler, bands_all, resample_agg, lower=2, upper=98):
 #     """
