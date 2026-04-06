@@ -109,54 +109,57 @@ for t in range(48):
     # silhouette_scores.append(sil_score)
 
 # Save to parquet as this helps maintain column information (which is a list)
-pd.DataFrame(dict_info).to_parquet(".//data//processed//validation_results//bootstrap_mean_results.parquet")
+pd.DataFrame(dict_info).to_parquet(".//data//processed//validation_results//bootstrap_mean_results_GMM.parquet")
 
 
 
-# dict_ari = defaultdict(list)
+dict_ari = defaultdict(list)
 
-# def bootstrap_ari(data, labels):
-#     random_index = np.random.randint(len(data), size=10000)
+def bootstrap_ari(data, labels):
+    random_index = np.random.randint(len(data), size=10000)
 
-#     bootstrap_data = data[random_index]
-#     gmm_boot = GaussianMixture(n_components=config.GMM_COMPONENTS, random_state=35, n_init=config.GMM_N_INIT)
-#     gmm_boot.fit(bootstrap_data)
+    bootstrap_data = data[random_index]
+    gmm_boot = GaussianMixture(n_components=config.GMM_COMPONENTS, random_state=35, n_init=config.GMM_N_INIT)
+    gmm_boot.fit(bootstrap_data)
 
-#     # Predict labels for the original month's data
-#     y_boot = gmm_boot.predict(data)
+    # Predict labels for the original month's data
+    y_boot = gmm_boot.predict(data)
 
-#     return adjusted_rand_score(labels, y_boot)
+    return adjusted_rand_score(labels, y_boot)
 
-# os.environ["LOKY_MAX_CPU_COUNT"] = "4"
-# n_boot_ari = 50
-# start_index = 0
+os.environ["LOKY_MAX_CPU_COUNT"] = "4"
+n_boot_ari = 50
+start_index = 0
 
-# for t in range(2):
-#     mask_true = mask_monthly[t*pixel_per_timestamp:(t+1)*pixel_per_timestamp]
-#     valid_pixels = len(mask_true[mask_true])
-#     data = data_monthly[start_index:start_index + valid_pixels]
-#     labels = labels_monthly[start_index:start_index + valid_pixels]
+for t in range(48):
+    mask_true = mask_monthly[t*pixel_per_timestamp:(t+1)*pixel_per_timestamp]
+    valid_pixels = len(mask_true[mask_true])
+    data = data_monthly[start_index:start_index + valid_pixels]
+    labels = labels_monthly[start_index:start_index + valid_pixels]
 
-#     with ThreadPoolExecutor() as executor:
-#         ari_scores = list(
-#             executor.map(
-#                 bootstrap_ari,
-#                 [data] * n_boot_ari,
-#                 [labels] * n_boot_ari,
-#             )
-#         )
-#     print(ari_scores)
-#     ari_scores = np.array(ari_scores)
-#     mean  = ari_scores.mean(axis=0)
-#     stdev = ari_scores.std(axis=0)
-#     dict_ari["time"].append(t)
-#     dict_ari["mean"].append(mean)
-#     dict_ari["stdev"].append(stdev)
-#     start_index += valid_pixels
+    with ThreadPoolExecutor() as executor:
+        ari_scores = list(
+            executor.map(
+                bootstrap_ari,
+                [data] * n_boot_ari,
+                [labels] * n_boot_ari,
+            )
+        )
+    print(ari_scores)
+    ari_scores = np.array(ari_scores)
+    mean  = ari_scores.mean(axis=0)
+    stdev = ari_scores.std(axis=0)
+    dict_ari["time"].append(t)
+    dict_ari["mean"].append(mean)
+    dict_ari["stdev"].append(stdev)
+    start_index += valid_pixels
 
-# pd.DataFrame(dict_ari).to_parquet(".//data//processed//validation_results//ari_results.csv")
-
-
-# print("Scripts done")
+#%%
+pd.DataFrame(dict_ari).to_parquet(".//data//processed//validation_results//ari_results_GMM.parquet")
 
 
+print("Scripts done")
+
+
+
+# %%
