@@ -5,6 +5,7 @@ water depth on reflectance.
 
 Reference:
 https://github.com/teongu/lyzenga1978/
+https://doi.org/10.30536/ijreses.v2i.14076
 """
 
 import gc
@@ -18,9 +19,12 @@ from sklearn.linear_model import LinearRegression
 
 
 def dem_resampling(raw_bands, dem):
+    """Resample DEM data to match AOI and resolution of satellite data"""
+
     print(" - Resampling DEM to match raw bands...")
     aoi = raw_bands['cb'].isel(time=0)
 
+    # Extract bouding box of AOI
     minx = float(aoi.x.min())
     maxx = float(aoi.x.max())
     miny = float(aoi.y.min())
@@ -45,7 +49,17 @@ def dem_resampling(raw_bands, dem):
     return dem_resampled
 
 def depth_regression_data(raw_bands, dem_resampled):
+    """
+    Takes the median reflectance per pixel across all time steps to reduce noise,
+    then filters to water-only pixels using the DEM (elevation < 0). The resulting
+    two arrays of band reflectance (regression_pixels) and known depth (depth_regression) 
+    are passed to estimate_ki_kj_bathy() to estimate how strongly each band is
+    attenuated by water depth, which is needed to compute the depth-invariant indices.
+    """
+
     print(" - Preparing regression data for ki/kj estimation...")
+
+    # Select pixels used in estimating ki/kj
     regression_pixels = {}
     for name in config.LYZENGA_BANDS:
         print(f"   - Collapsing band to one time slice: {name}")
@@ -62,11 +76,12 @@ def depth_regression_data(raw_bands, dem_resampled):
                 np.isfinite(dem_flat) & \
                 (dem_flat < config.DEM_WATER_THRESHOLD)  # only water (negative elevation)
     
-    # Filter all arrays
+    # Filter all pixel arrays
     for name in config.LYZENGA_BANDS:
         print(f"   - Filtering for valid pixels in band: {name}")
         regression_pixels[name] = regression_pixels[name][valid_mask]
 
+    # Filter DEM
     print("   - Filtering for valid pixels in bathymetry")
     depth_regression = dem_flat[valid_mask]
 
@@ -75,9 +90,10 @@ def depth_regression_data(raw_bands, dem_resampled):
 
     return depth_regression, regression_pixels
 
-# ── Step 1: Xi transformation ────────────────────────────────────────────────
 
-def compute_Xi(band: xr.DataArray, dw_value: float) -> xr.DataArray:
+
+# Step 1: Xi transformation
+def compute_Xi(band: xr.DataArray, dw_value: float):
     """
     Apply the Lyzenga log transformation to a single band.
 
@@ -85,35 +101,21 @@ def compute_Xi(band: xr.DataArray, dw_value: float) -> xr.DataArray:
 
     where Bi_inf is the mean reflectance of optically deep water in band i.
     Pixels where (Bi - Bi_inf) <= 0 are set to NaN (physically invalid).
-
-    Args:
-        band:     xarray DataArray of raw reflectance (any shape).
-        dw_value: Mean deep-water reflectance for this band.
-
-    Returns:
-        xarray DataArray of Xi values, same shape as input.
     """
+
     diff = band - dw_value
     diff = diff.where(diff > 0)          # mask non-positive values → NaN
     return xr.apply_ufunc(np.log, diff)
 
 
-# ── Step 2a: Estimate ki/kj from bathymetry (if available) ──────────────────
 
-def estimate_ki_kj_bathy(Xi: np.ndarray, Xj: np.ndarray,
-                          bathy: np.ndarray) -> float:
+# Step 2a: Estimate ki/kj from bathymetry (if available)
+def estimate_ki_kj_bathy(Xi: np.ndarray, Xj: np.ndarray, bathy: np.ndarray):
     """
     Estimate the attenuation ratio ki/kj by regressing Xi and Xj
     independently against known water depth values.
 
     Returns ki/kj = slope_i / slope_j.
-
-    Args:
-        Xi, Xj: 1D arrays of log-transformed band values over the regression zone.
-        bathy:  1D array of known depth values (positive = deeper).
-
-    Returns:
-        Ratio of attenuation coefficients ki/kj (float).
     """
     valid = np.isfinite(Xi) & np.isfinite(Xj) & np.isfinite(bathy)
 
@@ -130,9 +132,8 @@ def estimate_ki_kj_bathy(Xi: np.ndarray, Xj: np.ndarray,
     return ki / kj
 
 
-# ── Step 2b: Estimate ki/kj from homogeneous bottom (no bathymetry needed) ──
-
-def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray) -> float:
+# Step 2b: Estimate ki/kj from homogeneous bottom (no bathymetry needed)
+def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray):
     """
     Estimate ki/kj using Lyzenga's covariance method — no bathymetry required.
 
@@ -140,14 +141,8 @@ def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray) -> float:
     together. The slope of Xi regressed on Xj estimates ki/kj directly.
 
     Pick a zone that is:
-      - Shallow enough to contain bottom signal (not optically deep)
+      - Shallow enough to contain bottom signal (not deep water)
       - Visually homogeneous in bottom type (e.g. all sand)
-
-    Args:
-        Xi, Xj: 1D arrays over the selected homogeneous zone.
-
-    Returns:
-        Ratio ki/kj (float).
     """
     valid = np.isfinite(Xi) & np.isfinite(Xj)
     reg = LinearRegression().fit(Xj[valid].reshape(-1, 1), Xi[valid])
@@ -155,10 +150,8 @@ def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray) -> float:
     return coeff
 
 
-# ── Step 3: Compute depth-invariant index for a band pair ───────────────────
-
-def depth_invariant_index(Xi: xr.DataArray, Xj: xr.DataArray,
-                           ki_kj: float) -> xr.DataArray:
+# Step 3: Compute depth-invariant index for a band pair
+def depth_invariant_index(Xi: xr.DataArray, Xj: xr.DataArray, ki_kj: float):
     """
     Compute the depth-invariant bottom index (DII) for a pair of bands.
 
@@ -166,60 +159,35 @@ def depth_invariant_index(Xi: xr.DataArray, Xj: xr.DataArray,
 
     This combination is perpendicular to the depth axis in (Xi, Xj) space,
     so depth variation cancels out while bottom-type variation is preserved.
-
-    Args:
-        Xi, Xj: xarray DataArrays (log-transformed bands).
-        ki_kj:  Attenuation ratio ki/kj.
-
-    Returns:
-        xarray DataArray of depth-invariant values.
     """
+
     return Xi - ki_kj * Xj
 
 
-# ── Step 4: Full pipeline ────────────────────────────────────────────────────
-
+# Step 4: Full pipeline
 def apply_lyzenga(raw_bands: dict,
                   dw_values: dict,
                   ki_kj_ratios: dict | None = None,
                   regression_pixels: dict | None = None,
                   use_bathy: bool = False,
-                  bathy: np.ndarray | None = None) -> dict:
+                  bathy: np.ndarray | None = None):
     """
-    Full Lyzenga correction pipeline.
-
-    Produces one depth-invariant index per pair of correctable bands
-    (those listed in dw_values). Indices are named 'di_{band_i}_{band_j}'.
-
-    Args:
-        raw_bands:       Dict of {name: xr.DataArray} from extract_bands().
-        dw_values:       Dict of {band_name: deep_water_mean} for correctable bands.
-                         Only bands listed here will be corrected.
-        ki_kj_ratios:    Optional pre-computed dict of {('bi','bj'): ratio}.
-                         If None, ratios are estimated from regression_pixels.
-        regression_pixels: Dict of {band_name: 1D np.ndarray} of pixel values
-                           from a homogeneous-bottom calibration zone.
-        use_bathy:       If True, use bathymetry for ki/kj estimation.
-        bathy:           1D array of depth values for the regression zone
-                         (required if use_bathy=True).
-
-    Returns:
-        Dict of {di_name: xr.DataArray} — one entry per band pair.
+    Full Lyzenga correction pipeline. Produces one depth-invariant index 
+    per pair of correctable bands (those listed in dw_values).
     """
     band_names = list(dw_values.keys())
 
-    # ── Xi transform ────────────────────────────────────────────────────────
+    # Xi transform
     Xi_bands = {}
     for name in band_names:
         Xi_bands[name] = compute_Xi(raw_bands[name], dw_values[name])
         print(f"   - Xi computed for {name}")
 
-    # ── ki/kj ratios ────────────────────────────────────────────────────────
+    # ki/kj ratios
     if ki_kj_ratios is None:
         if regression_pixels is None:
             raise ValueError(
-                "Provide either ki_kj_ratios or regression_pixels "
-                "to estimate attenuation coefficients."
+                "Provide either ki_kj_ratios or regression_pixels to estimate attenuation coefficients."
             )
         ki_kj_ratios = {}
         for name_i, name_j in combinations(band_names, 2):
@@ -236,7 +204,7 @@ def apply_lyzenga(raw_bands: dict,
             ki_kj_ratios[(name_i, name_j)] = ratio
             print(f"   - k{name_i}/k{name_j} = {ratio:.4f}")
 
-    # ── Depth-invariant indices ──────────────────────────────────────────────
+    # Depth-invariant indices
     di_bands = {}
     for (name_i, name_j), ratio in ki_kj_ratios.items():
         di_name = f"di-{name_i}-{name_j}"
