@@ -1,3 +1,7 @@
+# This file is meant to save (i.e. cache) results of large pipelines that take a long time to run. 
+# It saves most files in a 'data\interim\' folder that only exists locally. Note: The entire pipeline
+# can take up to 45gb of local storage.
+
 import os
 import joblib
 import shutil
