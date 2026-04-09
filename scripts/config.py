@@ -13,8 +13,11 @@ DEM_FILE = "OTI_25cm_Q820_all_bathy_topo_DTM_refract_-1m_GM(bin,min,0.25,1).tif"
 RESAMPLE_FREQ = 'MS'
 RESAMPLE_AGG = 'median'
 N_SAMPLES = None
-GMM_COMPONENTS = 10
+GMM_COMPONENTS = 10 # Change to N_CLUSTERS
+N_CLUSTERS = 10
 GMM_N_INIT = 3
+KMEANS_N_INIT = 20
+RANDOM_STATE = 42
 PERCENTILE_LOWER = 2
 PERCENTILE_UPPER = 98
 NO_DATA_VALUE = 0
@@ -36,6 +39,7 @@ if FORCE_RECOMPUTE == False:
     FORCE_BASELINE      = False
     FORCE_MONTHLY       = False
     FORCE_GMM           = False
+    FORCE_KMEANS        = False
     FORCE_PREDICTIONS   = False
     FORCE_SPATIAL       = False
 else:
@@ -43,14 +47,18 @@ else:
     FORCE_BASELINE      = True
     FORCE_MONTHLY       = True 
     FORCE_GMM           = True
+    FORCE_KMEANS        = True
     FORCE_PREDICTIONS   = True 
     FORCE_SPATIAL       = True
 
 YEAR_STRING = ",".join(str(y) for y in BASELINE_YEAR)
-RUN_NAME = f"B({YEAR_STRING})_k{GMM_COMPONENTS}_init{GMM_N_INIT}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}{bathy_suffix}"
+RUN_NAME = f"B({YEAR_STRING})_k{N_CLUSTERS}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}{bathy_suffix}"
+# GMM_RUN_NAME = f"B({YEAR_STRING})_k{N_CLUSTERS}_init{KMEANS_N_INIT}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}{bathy_suffix}"
+# K_MEANS_RUN_NAME = f"B({YEAR_STRING})_k{GMM_COMPONENTS}_init{GMM_N_INIT}_{RESAMPLE_FREQ}_{RESAMPLE_AGG}{bathy_suffix}"
 BASELINE_NAME = f'baseline_data_{RUN_NAME}'
 MONTHLY_NAME = f'monthly_data_{RUN_NAME}'
 GMM_NAME = f'gmm_{RUN_NAME}'
+KMEANS_NAME = f'kmeans_{RUN_NAME}'
 PREDICTIONS_NAME = f'predictions_monthly_{RUN_NAME}'
 SPATIAL_NAME = f'labels_monthly_{RUN_NAME}'
 

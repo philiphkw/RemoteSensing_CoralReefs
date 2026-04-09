@@ -2,6 +2,9 @@
 data/interim/
 data/external/
 
+# Models (too large)
+models/kmeans_B(2022,2023)_k10_MS_median_bathy_11F.pkl 
+
 # Python cache
 __pycache__/
 *.pyc
@@ -9,7 +12,7 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
-.graph_test.ipynb
+graph_test.ipynb
 
 # Environment
 *.env
