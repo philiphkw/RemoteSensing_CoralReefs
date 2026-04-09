@@ -18,7 +18,7 @@ INTERIM_DIR = pjoin(config.DATA_DIR, 'interim')
 os.makedirs(INTERIM_DIR, exist_ok=True)
 
 def sample_data(data, perc_sample=None, n_samples=100_000, random_state=config.RANDOM_STATE):
-    """Randomly sample n_samples rows from data for fast GMM prototyping."""
+    """Randomly sample n_samples rows from data."""
     
     if perc_sample:
         n_samples = round(len(data) * perc_sample)
@@ -33,54 +33,21 @@ def sample_data(data, perc_sample=None, n_samples=100_000, random_state=config.R
     print(f"      - Sampled {n_samples:,} / {len(data):,} rows (i.e. pixels) ({100*n_samples/len(data):.1f}%)")
     return data[idx]
 
-# def train_gmm(data, n_components, n_samples=None, random_state=1, n_init=config.GMM_N_INIT):
-#     print(" - Training GMM...")
-#     print(f"    - n_components: {n_components}, n_init: {n_init}")
-#     gmm = GaussianMixture(
-#         n_components=n_components, 
-#         random_state=random_state, 
-#         n_init=n_init
-#     )
-#     t0 = time.time()
-#     if n_samples:
-#         data_sample = sample_data(data, n_samples=n_samples)
-#         gmm.fit(data_sample)
-#     else:
-#         gmm.fit(data)
-
-#     print(f"    - Training complete in {time.time()-t0:.1f}s")
-#     return gmm
-
-# def train_kmeans(data,  n_clusters, n_samples=None, random_state=1, n_init=config.KMEANS_N_INIT):
-#     print(" - Training Kmeans...")
-#     print(f"    - n_clusters: {n_clusters}, n_init: {n_init}")
-#     kmeans = KMeans(
-#         n_clusters=n_clusters,
-#         random_state=random_state,
-#         n_init=config.KMEANS_N_INIT
-#     )
-#     t0 = time.time()
-#     if n_samples:
-#         data_sample = sample_data(data, n_samples=n_samples)
-#         kmeans.fit(data_sample)
-#     else:
-#         kmeans.fit(data)
-
-#     print(f"    - Training complete in {time.time()-t0:.1f}s")
-#     return kmeans
 
 
-def train_model(data, model, n_samples=None):
+def train_model(data, model, perc_sample=None, n_samples=None):
     print(" - Training Model...")
     t0 = time.time()
     if n_samples:
-        data_sample = sample_data(data, n_samples=n_samples)
+        data_sample = sample_data(data, perc_sample=perc_sample, n_samples=n_samples)
         model.fit(data_sample)
     else:
         model.fit(data)
 
     print(f"    - Training complete in {time.time()-t0:.1f}s")
     return model
+
+
 
 def predict_gmm(gmm, data):
     t0 = time.time()
@@ -90,12 +57,15 @@ def predict_gmm(gmm, data):
     print(f" - Predicting complete in {time.time()-t0:.1f}s")
     return labels, probs
 
+
+
 def predict_kmeans(kmeans, data):
     t0 = time.time()
     print(" - Predicting labels...")
     labels = kmeans.predict(data)
     print(f" - Predicting complete in {time.time()-t0:.1f}s")
     return labels
+
 
 
 def print_cluster_distribution(labels, model_type):
@@ -107,9 +77,11 @@ def print_cluster_distribution(labels, model_type):
         print(f" - Cluster {i}: {count:,} pixels ({100*count/total:.1f}%)")
 
 
+
 def save_model(model, name):
     joblib.dump(model, pjoin(config.MODELS_DIR, f'{name}_{config.RUN_NAME}.pkl'))
     print("Models saved")
+
 
 
 def save_labels(labels, mask, reference_band, name, num_timesteps=None):
@@ -118,13 +90,6 @@ def save_labels(labels, mask, reference_band, name, num_timesteps=None):
     
     If num_timesteps is provided, assumes labels are from resampled temporal data
     and aggregates across time using majority voting.
-    
-    Args:
-        labels: Predictions (only on valid data after filtering)
-        mask: Boolean mask of valid rows (before filtering) — shape (num_timesteps*x_size*y_size,)
-        reference_band: xarray for CRS/transform info
-        name: Output filename
-        num_timesteps: Number of time steps (for temporal aggregation)
     """
     t0 = time.time()
 
@@ -135,22 +100,22 @@ def save_labels(labels, mask, reference_band, name, num_timesteps=None):
     if num_timesteps is not None:
         print(f"Aggregating {num_timesteps} time steps across space...")
         
-        # Step 1: Expand labels back to full size (filling invalid rows with -1)
+        # Expand labels back to full size (filling invalid rows with -1)
         print(" - Expanding labels to full temporal-spatial shape...")
         labels_full = np.full(len(mask), -1, dtype=labels.dtype)
         labels_full[mask] = labels
         
-        # Step 2: Reshape to (num_timesteps, x_size, y_size)
+        # Reshape to (num_timesteps, x_size, y_size)
         print(" - Reshaping to (time, x, y)...")
         labels_temporal_spatial = labels_full.reshape(num_timesteps, x_size, y_size)
         
-        # Step 3: Majority vote per pixel across time (ignoring -1 padding)
+        # Majority vote per pixel across time (ignoring -1 padding)
         print(" - Performing majority voting across time steps...")  
         from scipy.stats import mode
         labels_spatial = np.full((x_size, y_size), np.nan, dtype=np.float32)
         
         # Reshape to (num_pixels, num_timesteps) for easier vectorization
-        labels_pixel_time = labels_temporal_spatial.reshape(num_timesteps, -1).T  # (2.5M, 12)
+        labels_pixel_time = labels_temporal_spatial.reshape(num_timesteps, -1).T
         
         print(f" - Vectorized majority voting on {labels_pixel_time.shape[0]:,} pixels...")
         
@@ -159,13 +124,12 @@ def save_labels(labels, mask, reference_band, name, num_timesteps=None):
             valid_labels = timeseries[timeseries != -1].astype(int)
             
             if len(valid_labels) > 0:
-                # bincount is ~100x faster than mode()
                 counts = np.bincount(valid_labels)
                 labels_spatial.flat[pixel_idx] = np.argmax(counts)
         
         print(" - Majority voting complete")
         
-        # Step 4: Create final spatial array
+        # Create final spatial array
         spatial = labels_spatial.astype(np.float32)
         spatial = np.flipud(spatial)
     else:
@@ -183,11 +147,14 @@ def save_labels(labels, mask, reference_band, name, num_timesteps=None):
 
     return spatial
 
+
+
 def save_labels_timeseries(labels, mask, ref_band, name, num_timesteps, timestamps):
     """Save one GeoTIFF per timestep instead of majority-voting across time."""
+    
     t0 = time.time()
     print(" - Saving monthly labels...")
-    os.makedirs(pjoin(config.MODELS_DIR, name), exist_ok=True)
+    os.makedirs(pjoin(config.INTERIM_DIR, name), exist_ok=True)
 
     x_size = ref_band.shape[1]
     y_size = ref_band.shape[2]
@@ -212,45 +179,4 @@ def save_labels_timeseries(labels, mask, ref_band, name, num_timesteps, timestam
         print(f"   - Saved {name}_{ts_str}.tif")
     print(f"Saving labels complete in {time.time()-t0:.1f}s")
     
-    return labels_4d  # shape: (num_timesteps, x, y)
-
-
-
-# def validate_temporal(gmm, scaler, bands_all, resample_agg, lower=2, upper=98):
-#     """
-#     Temporal check: classifies each year separately and measures how consistent
-#     cluster distributions are across time. 
-#     High variance across years = clusters are capturing noise, not real structure.
-#     """
-#     from scripts.features import prepare_data
-
-#     print("\nRunning temporal stability check...")
-
-#     years = np.unique([t.year for band in bands_all 
-#                        for t in pd.to_datetime(band.time.values)])
-    
-#     year_distributions = {}
-
-#     for year in sorted(years):
-#         data_year, _, _ = prepare_data(
-#             bands_all, year=year,
-#             resample_freq='YS',
-#             resample_agg=resample_agg,
-#             scaler=scaler,  # reuse 2022 scaler
-#             lower=lower, upper=upper
-#         )
-#         labels_year, _ = predict(gmm, data_year)
-
-#         # Get distribution as percentages
-#         dist = np.array([100 * np.sum(labels_year == i) / len(labels_year) 
-#                          for i in range(gmm.n_components)])
-#         year_distributions[year] = dist
-#         print(f"  {year}: " + " | ".join([f"C{i}:{dist[i]:.1f}%" for i in range(gmm.n_components)]))
-
-#     # Measure variance across years per cluster
-#     dist_matrix = np.stack(list(year_distributions.values()))  # shape: (n_years, n_clusters)
-#     cluster_variance = dist_matrix.std(axis=0)
-#     print(f"\n  Cluster % std across years: {dict(enumerate(cluster_variance.round(2)))}")
-#     print(f"  Mean std: {cluster_variance.mean():.2f}% — lower is more stable")
-
-#     return year_distributions
+    return labels_4d
