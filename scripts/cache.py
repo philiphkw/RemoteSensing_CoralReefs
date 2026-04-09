@@ -1,6 +1,6 @@
-# This file is meant to save (i.e. cache) results of large pipelines that take a long time to run. 
-# It saves most files in a 'data\interim\' folder that only exists locally. Note: The entire pipeline
-# can take up to 45gb of local storage.
+# This script is meant to cache results of large pipelines that take a long time to run. 
+# It saves most files in a 'data\interim\' folder that only exists locally. Models are saved to 
+# 'models\' folder. Note: The entire pipeline can take up to 45gb of local storage.
 
 import os
 import joblib
@@ -15,8 +15,14 @@ import scripts.config as config
 INTERIM_DIR = pjoin(config.DATA_DIR, 'interim')
 os.makedirs(INTERIM_DIR, exist_ok=True)
 
+
+
 def cache_bands(name, compute_fn, force_recompute=False):
-    """Cache a dict of xarray DataArrays as numpy arrays + coordinates."""
+    """
+    Takes in a dictionary of xarray DataArrays and caches it to a folder as individual numpy array files + coordinates.
+    If the bands already exist, it will reconstruct it back into a dictionary of xarray DataArrays. If a band is
+    missing, it will rerun the pipline assigned to `compute_fn`.
+    """
     bands_dir = pjoin(config.INTERIM_DIR, name)
 
     band_names = ['bg', 'blue', 'brightness', 'cb', 'green', 'ndavi', 'nir', 'red', 'yellow']
@@ -63,8 +69,11 @@ def cache_bands(name, compute_fn, force_recompute=False):
     return bands
 
 
+
 def cache_data(name, compute_fn, force_recompute=False):
-    """Load from cache if exists, otherwise compute and save."""
+    """
+    Saves output of prepocessing pipeline including cleaned data, masked data, and fitted scalar for reuse.
+    """
     path = pjoin(INTERIM_DIR, f'{name}.npy')
     scaler_path = pjoin(INTERIM_DIR, f'{name}_scaler.pkl')
     mask_path = pjoin(INTERIM_DIR, f'{name}_mask.npy')
@@ -87,8 +96,11 @@ def cache_data(name, compute_fn, force_recompute=False):
     return data, mask, scaler
 
 
+
 def cache_model(name, compute_fn, force_recompute=False):
-    """Load model from cache if exists, otherwise train and save."""
+    """
+    Saves trained models as a .pkl file. If no model exists with the same name, then model training pipeline is rerun.
+    """
     path = pjoin(config.MODELS_DIR, f'{name}.pkl')
     
     if os.path.exists(path) and not force_recompute:
@@ -96,33 +108,20 @@ def cache_model(name, compute_fn, force_recompute=False):
         return joblib.load(path)
     
     print(f"[MISSING] No cache found for {name}, training...")
-    result = compute_fn()
-    joblib.dump(result, path)
+    model = compute_fn()
+    joblib.dump(model, path)
     print(f" - Saved {name} to models/")
-    return result
+    return model
 
-
-def cache_spatial(name, compute_fn, force_recompute=False):
-    """Load spatial labels from cache if exist, otherwise compute and save."""
-    path = pjoin(INTERIM_DIR, f'{name}_spatial.npy')
-    
-    if os.path.exists(path) and not force_recompute:
-        print(f"[EXISTS] Loading cached spatial labels {name} from interim/")
-        return np.load(path)
-    
-    if os.path.exists(path) and force_recompute:
-        os.remove(path)
-        print(f"[DELETED] {name}")
-    
-    print(f"[MISSING] No cache found for {name}, computing...")
-    result = compute_fn()
-    np.save(path, result)
-    print(f" - Saved spatial labels {name} to interim/")
-    return result
 
 
 def cache_predictions(name, compute_fn, model_type, force_recompute=False):
-    """Load predictions (labels and/or probs) from cache if exist, otherwise compute and save."""
+    """
+    Load predictions (labels and/or probs) from cache if exist, otherwise compute and save.
+    Accepts either 'gmm' or 'kmeans'. 
+    """
+
+    # GMM is soft clustering which returns labels and probability values
     if model_type == "gmm":
         labels_path = pjoin(INTERIM_DIR, f'{name}_labels.npy')
         probs_path = pjoin(INTERIM_DIR, f'{name}_probs.npy')
@@ -138,8 +137,9 @@ def cache_predictions(name, compute_fn, model_type, force_recompute=False):
         np.save(labels_path, labels)
         np.save(probs_path, probs)
         print(f" - Saved predictions {name} to interim/")
-        return labels, probs
+        return labels, probs 
     
+    # Kmeans is hard clustering which only returns labels
     elif model_type == "kmeans":
         labels_path = pjoin(INTERIM_DIR, f'{name}_labels.npy')
 
@@ -157,13 +157,12 @@ def cache_predictions(name, compute_fn, model_type, force_recompute=False):
     else:
         raise ValueError("[ERROR] Please provide a valid model_type ('gmm' or 'kmeans')")
 
-def cache_spatial_timeseries(name, compute_fn, timestamps, ref_band, force_recompute=False):
+
+
+def cache_monthly_labels(name, compute_fn, timestamps, ref_band, force_recompute=False):
     """
-    Load a spatial timeseries from cache if it exists, otherwise compute and save.
-    
-    Stores:
-      - A single .npy file (num_timesteps, x, y) for fast reloading
-      - Individual per-timestep GeoTIFFs in interim/<name>/
+    Loads/stores a single .npy file containing array of monthly predicted labels, and stores individual per-timestep
+    monthly predictions as a GEOTIFF file in interim/<name> for detailed inspection.
     """
 
     npy_path = pjoin(INTERIM_DIR, f'{name}_spatial.npy')
