@@ -139,10 +139,6 @@ def estimate_ki_kj_covariance(Xi: np.ndarray, Xj: np.ndarray):
 
     Over a homogeneous bottom type, depth variation causes Xi and Xj to vary
     together. The slope of Xi regressed on Xj estimates ki/kj directly.
-
-    Pick a zone that is:
-      - Shallow enough to contain bottom signal (not deep water)
-      - Visually homogeneous in bottom type (e.g. all sand)
     """
     valid = np.isfinite(Xi) & np.isfinite(Xj)
     reg = LinearRegression().fit(Xj[valid].reshape(-1, 1), Xi[valid])
@@ -191,16 +187,13 @@ def apply_lyzenga(raw_bands: dict,
             )
         ki_kj_ratios = {}
         for name_i, name_j in combinations(band_names, 2):
-            Xi_reg = np.log(
-                np.maximum(regression_pixels[name_i] - dw_values[name_i], 1e-6)
-            )
-            Xj_reg = np.log(
-                np.maximum(regression_pixels[name_j] - dw_values[name_j], 1e-6)
-            )
+            Xi_reg = np.log(np.maximum(regression_pixels[name_i] - dw_values[name_i], 1e-6))
+            Xj_reg = np.log(np.maximum(regression_pixels[name_j] - dw_values[name_j], 1e-6))
             if use_bathy and bathy is not None:
                 ratio = estimate_ki_kj_bathy(Xi_reg, Xj_reg, bathy)
             else:
                 ratio = estimate_ki_kj_covariance(Xi_reg, Xj_reg)
+                
             ki_kj_ratios[(name_i, name_j)] = ratio
             print(f"   - k{name_i}/k{name_j} = {ratio:.4f}")
 
