@@ -82,6 +82,6 @@ X_MINMAX = ('2024-01', '2024-05')
 DEM_WATER_THRESHOLD = 0
 DEM_OUTLIER_THRESHOLD = -3000
 LYZENGA_BANDS = ['cb', 'blue', 'green']   # bands to apply correction to
-LYZENGA_DW_VALUES = {'cb': 400, 'blue': 300, 'green': 100}
+LYZENGA_DW_VALUES = {'cb': 400, 'blue': 300, 'green': 100}   # Ball-park figures derived from https://doi.org/10.30536/ijreses.v2i.14076
 LYZENGA_KI_KJ = None
 LYZENGA_REGRESSION_ZONE = pjoin(ROOT_DIR, r'scripts\lyzenga.py')
