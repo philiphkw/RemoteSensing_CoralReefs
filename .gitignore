@@ -9,6 +9,7 @@ models/kmeans_B(2022,2023)_k10_MS_median_bathy_11F.pkl
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 
 # Jupyter
 .ipynb_checkpoints/

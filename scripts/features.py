@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import scripts.config as config
 
 
+
 def percentile_clip(data, lower=config.PERCENTILE_LOWER, upper=config.PERCENTILE_UPPER):
     print(f"   - Clipping to percentile {lower}-{upper}")
     data_clipped = data.copy()
@@ -14,6 +15,7 @@ def percentile_clip(data, lower=config.PERCENTILE_LOWER, upper=config.PERCENTILE
         data_clipped[:, i] = np.clip(col, np.percentile(col, lower), np.percentile(col, upper))
 
     return data_clipped
+
 
 
 def build_feature_matrix(bands_all, year, resample_freq, resample_agg):
@@ -39,11 +41,17 @@ def build_feature_matrix(bands_all, year, resample_freq, resample_agg):
 
     return np.stack(flattened_bands, axis=1)
 
-def prepare_data(bands_all, year, resample_freq, 
-                 resample_agg, scaler=None, 
+
+
+def prepare_data(bands_all, 
+                 year, 
+                 resample_freq, 
+                 resample_agg, 
+                 scaler=None, 
                  lower=config.PERCENTILE_LOWER, 
-                 upper=config.PERCENTILE_UPPER, 
-                 no_data=config.NO_DATA_VALUE):
+                 upper=config.PERCENTILE_UPPER
+                 ):
+    
     """Full pipeline: resample → mask invalids → clip → normalize."""
     print(" - Preparing data for model training...")
     matrix = build_feature_matrix(bands_all, year, resample_freq, resample_agg)
