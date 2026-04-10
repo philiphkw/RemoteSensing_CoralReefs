@@ -10,6 +10,8 @@ INTERIM_DIR = pjoin(DATA_DIR, 'interim')
 EXTERNAL_DIR = pjoin(DATA_DIR, 'external')
 DEM_FILE = "OTI_25cm_Q820_all_bathy_topo_DTM_refract_-1m_GM(bin,min,0.25,1).tif"
 
+
+
 # General Parameters
 RESAMPLE_FREQ = 'MS'
 RESAMPLE_AGG = 'median'
@@ -24,12 +26,6 @@ PERCENTILE_UPPER = 98
 TRAINING_YEAR = [2022, 2023]
 LYZENGA_ALG = True      # Toggles whether Lyzenga Algorithm is used in preprocessing
 
-
-# Parameters for Validating Clusters
-SAMPLE_SIZE_BOOT = 100000
-N_BOOT = 500
-SAMPLE_SIZE_BOOT_ARI = 10000
-N_BOOT_ARI = 50
 
 
 # Toggle which pipelines are forced to ignore cached file and rerun
@@ -53,6 +49,15 @@ else:
     FORCE_SPATIAL       = True
 
 
+
+# Parameters for Validating Clusters
+SAMPLE_SIZE_BOOT = 100000
+N_BOOT = 500
+SAMPLE_SIZE_BOOT_ARI = 10000
+N_BOOT_ARI = 50
+
+
+
 # Standardized naming scheme
 bathy_suffix = "_bathy" if LYZENGA_ALG else ""
 YEAR_STRING = ",".join(str(y) for y in TRAINING_YEAR)
@@ -63,6 +68,12 @@ GMM_NAME = f'gmm_{RUN_NAME}'
 KMEANS_NAME = f'kmeans_{RUN_NAME}'
 PREDICTIONS_NAME = f'predictions_monthly_{RUN_NAME}'
 SPATIAL_NAME = f'labels_monthly_{RUN_NAME}'
+
+
+
+# Visualization parameters
+ROLLING_WINDOW = 3
+X_MINMAX = ('2024-01', '2024-05')
 
 
 # Lyzenga Algorithm Parameters
