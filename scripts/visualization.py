@@ -12,6 +12,9 @@ import scripts.config as config
 from matplotlib.animation import FuncAnimation
 
 
+# ================================================================================
+# =============================== Helper Functions ===============================
+# ================================================================================
 
 def percentile_stretch(array, lower=2, upper=98):
     p_lower = np.percentile(array[~np.isnan(array)], lower)
@@ -21,18 +24,69 @@ def percentile_stretch(array, lower=2, upper=98):
 
 
 
-def _compute_means(band_name, cluster_id, spatial_labels_monthly, bands_all, timestamps):
+def apply_rolling(data, rolling_window):
+    if rolling_window is not None:
+        return pd.Series(data).rolling(window=rolling_window, center=True).mean().values
+    return data
+
+
+
+def _compute_means(band_name, cluster_id, labels_monthly, bands_all, timestamps):
+    """
+    Compute the average reflectance values of a band for a cluster across time.
+    """
     band = bands_all[band_name]
     band_monthly = band.resample(time=config.RESAMPLE_FREQ).median()
     means = []
     for t_idx, ts in enumerate(timestamps):
-        cluster_mask = spatial_labels_monthly[t_idx] == cluster_id
+        cluster_mask = labels_monthly[t_idx] == cluster_id
         band_slice = np.flipud(band_monthly.sel(time=ts, method='nearest').values)
         cluster_pixels = band_slice[cluster_mask]
         valid_pixels = cluster_pixels[np.isfinite(cluster_pixels)]
         means.append(np.mean(valid_pixels) if len(valid_pixels) > 0 else np.nan)
     return means
 
+
+
+def compute_cluster_pixel_counts(cluster_ids, labels_monthly, rolling_window=None):
+    """
+    Compute the total number of pixels assigned to specified clusters across time.
+    """
+    
+    pixel_counts = {}
+    
+    for cluster_id in cluster_ids:
+        counts = []
+        for spatial_labels in labels_monthly:
+            cluster_mask = spatial_labels == cluster_id
+            pixel_count = np.sum(cluster_mask)
+            counts.append(pixel_count)
+        
+        counts = np.array(counts, dtype=np.float32)
+        
+        # Apply rolling window smoothing if specified
+        if rolling_window is not None:
+            counts = apply_rolling(counts, rolling_window)
+        
+        pixel_counts[cluster_id] = counts
+    
+    return pixel_counts
+
+
+def compute_cluster_pixel_counts(cluster_id, labels_monthly, rolling_window=None):
+    """
+    Compute the total number of pixels assigned to specified clusters across time.
+    """
+    
+    pixel_counts = []
+    for spatial_labels in labels_monthly:
+        cluster_mask = spatial_labels == cluster_id
+        pixel_count = np.sum(cluster_mask)
+        pixel_counts.append(pixel_count)
+    
+    pixel_counts = np.array(pixel_counts, dtype=np.float32)
+    
+    return pixel_counts
 
 
 def load_monthly_rgb(stack):
@@ -57,14 +111,24 @@ def get_all_monthly_timestamps(bands_all):
     return list(ref_band.resample(time=config.RESAMPLE_FREQ).median().time.values)
 
 
+# ================================================================================
+# =========================== Visualization Pipelines ============================
+# ================================================================================
 
-def timeseries_gif(monthly_rgb, spatial_labels_monthly, timestamps, all_timestamps, suffix, from_year=2023):
+
+def timeseries_gif(file_name, monthly_rgb, labels_monthly, timestamps, all_timestamps, from_year=None):
+    """
+    Create a gif of all monthly predictions next to the corresponding rgb image of that month.
+    """
     print(" - Creating timeseries animation")
-    post_timestamps = [ts for ts in timestamps if pd.Timestamp(ts).year >= from_year]
+    if from_year is not None:
+        timestamps_to_plot = [ts for ts in timestamps if pd.Timestamp(ts).year >= from_year]
+    else:
+        timestamps_to_plot = list(timestamps)
 
     fig, ax = plt.subplots(1, 2, figsize=(24, 10))
 
-    first_ts = post_timestamps[0]
+    first_ts = timestamps_to_plot[0]
     first_spatial_idx = all_timestamps.index(first_ts)
 
     first_rgb = monthly_rgb.sel(
@@ -77,7 +141,7 @@ def timeseries_gif(monthly_rgb, spatial_labels_monthly, timestamps, all_timestam
 
     cmap = plt.cm.get_cmap('tab10', config.N_CLUSTERS)
     cmap.set_bad(color='black')
-    im_cls = ax[1].imshow(np.flipud(spatial_labels_monthly[first_spatial_idx]),
+    im_cls = ax[1].imshow(np.flipud(labels_monthly[first_spatial_idx]),
                             cmap=cmap, vmin=-0.5, vmax=config.N_CLUSTERS - 0.5,
                             interpolation='nearest', origin='upper')
     plt.colorbar(im_cls, ax=ax[1], label='Cluster ID', ticks=range(config.N_CLUSTERS))
@@ -85,7 +149,7 @@ def timeseries_gif(monthly_rgb, spatial_labels_monthly, timestamps, all_timestam
     plt.tight_layout()
 
     def update(t_idx):
-        ts = post_timestamps[t_idx]
+        ts = timestamps_to_plot[t_idx]
         spatial_idx = all_timestamps.index(ts)
         ts_str = pd.Timestamp(ts).strftime('%B %Y')
 
@@ -96,13 +160,13 @@ def timeseries_gif(monthly_rgb, spatial_labels_monthly, timestamps, all_timestam
 
         im_rgb.set_data(np.flipud(percentile_stretch(rgb)))
         ax[0].set_title(f'{ts_str} - RGB')
-        im_cls.set_data(np.flipud(spatial_labels_monthly[spatial_idx]))
+        im_cls.set_data(np.flipud(labels_monthly[spatial_idx]))
         ax[1].set_title(f'{ts_str} - Clusters')
 
         return im_rgb, im_cls
 
-    ani = FuncAnimation(fig, update, frames=len(post_timestamps), interval=800, blit=True)
-    path = pjoin(config.FIGURES_DIR, f'timeseries_comparison_{config.RUN_NAME}{suffix}.gif')
+    ani = FuncAnimation(fig, update, frames=len(timestamps_to_plot), interval=800, blit=True)
+    path = pjoin(config.FIGURES_DIR, file_name)
     ani.save(path, writer='pillow', dpi=150)
     print(f"Saved comparison gif to {path}")
     plt.show()
@@ -110,10 +174,63 @@ def timeseries_gif(monthly_rgb, spatial_labels_monthly, timestamps, all_timestam
 
 
 
+def plot_cluster_pixel_timeseries(file_name,
+                                  model_type,
+                                  cluster_ids,
+                                  labels_monthly,
+                                  timestamps,
+                                  x_minmax=tuple(),
+                                  rolling_window=None):
+    """
+    Plot the number of pixels assigned to specified clusters across time.
+    """
+    if isinstance(cluster_ids, int):
+        cluster_ids = [cluster_ids]
+        
+    fig, ax = plt.subplots(figsize=(14, 6))
+    
+    # Add shaded region if x_minmax provided (useful for marking event periods)
+    if x_minmax:
+        xmin = float(mdates.date2num(pd.Timestamp(x_minmax[0])))
+        xmax = float(mdates.date2num(pd.Timestamp(x_minmax[1])))
+        ax.axvspan(xmin=xmin, xmax=xmax, color='red', alpha=0.1, zorder=1)
+    
+    # Plot each cluster's pixel counts
+    for cluster_id in cluster_ids:
+        pixel_count = compute_cluster_pixel_counts(cluster_id, labels_monthly, rolling_window)
+        line, = ax.plot(timestamps, pixel_count, label=f'Cluster {cluster_id}', markersize=4, linewidth=1, alpha=0.3)
+        if rolling_window is not None:
+            ax.plot(timestamps, apply_rolling(pixel_count, rolling_window), label=f'Cluster {cluster_id}', marker='o', markersize=3, color=line.get_color())
+        else:
+            ax.plot(timestamps, pixel_count, label=f'Cluster {cluster_id}', marker='o', markersize=3, color=line.get_color())
+    
+    ax.set_xlabel('Date', fontsize=11)
+    ax.set_ylabel('Number of Pixels', fontsize=11)
+    title = f'{model_type.upper()} — Cluster Pixel Counts Over Time'
+    if rolling_window:
+        title += f' (rolling window: {rolling_window})'
+    ax.set_title(title, fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='best', fontsize=10)
+    
+    # Format x-axis dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    plt.xticks(rotation=45)
+    
+    plt.tight_layout()
+    plt.savefig(pjoin(config.FIGURES_DIR, file_name), dpi=300, bbox_inches='tight')
+    plt.show()
+
+
+
 def save_monthly_comparisons(model_type, monthly_rgb, labels_monthly, timestamps, 
                               all_timestamps, output_dir, from_year=None):
     """Save side-by-side RGB vs cluster label plots for each month."""
-    os.makedirs(output_dir, exist_ok=True)
+
+    dir = pjoin(config.FIGURES_DIR, output_dir)
+
+    os.makedirs(dir, exist_ok=True)
     if from_year is not None:
         timestamps_to_plot = [ts for ts in timestamps if pd.Timestamp(ts).year >= from_year]
     else:
@@ -145,12 +262,12 @@ def save_monthly_comparisons(model_type, monthly_rgb, labels_monthly, timestamps
         ax[1].set_title(f'{ts_str} - Clusters')
 
         plt.tight_layout()
-        plt.savefig(pjoin(output_dir, f'{model_type}_{ts_str.replace(" ", "_")}.png'), dpi=150, bbox_inches='tight')
+        plt.savefig(pjoin(dir, f'{model_type}_{ts_str.replace(" ", "_")}.png'), dpi=150, bbox_inches='tight')
         plt.close(fig)
 
 
 
-def plot_cluster_means(model, feature_names, model_type=None):
+def plot_cluster_means(file_name, model, feature_names, model_type=None):
     """Plot cluster means as a heatmap to inspect feature contributions."""
     if model_type == 'gmm':
         means = model.means_
@@ -169,29 +286,23 @@ def plot_cluster_means(model, feature_names, model_type=None):
     ax.set_xlabel('Feature')
     ax.set_ylabel('Cluster')
     plt.tight_layout()
-    plt.savefig(pjoin(config.FIGURES_DIR, f'cluster_means_{model_type}_{config.RUN_NAME}.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(pjoin(config.FIGURES_DIR, file_name), dpi=300, bbox_inches='tight')
     plt.show()
     return means_df
 
 
 
-def apply_rolling(means, rolling_window):
-    if rolling_window is not None:
-        return pd.Series(means).rolling(window=rolling_window, center=True).mean().values
-    return means
-
-
-
-def plot_band_cluster_timeseries(model_type, 
+def plot_band_cluster_timeseries(file_name,
+                                 model_type, 
                                  band_name, 
                                  cluster_ids, 
-                                 spatial_labels_monthly,
+                                 labels_monthly,
                                  bands_all, 
                                  timestamps, 
                                  x_minmax=tuple(), 
                                  rolling_window=None):
     """
-    Plots the average of ONE chosen feature (i.e. band) for ALL clusters across time.
+    Plots the average of one chosen feature (i.e. band) for all clusters across time.
     """
 
     fig, ax = plt.subplots(figsize=(14, 6))
@@ -205,7 +316,7 @@ def plot_band_cluster_timeseries(model_type,
         ax.axvspan(xmin=xmin, xmax=xmax, color='red', alpha=0.1, zorder=1)
 
     for cluster_id in cluster_ids:
-        means = _compute_means(band_name, cluster_id, spatial_labels_monthly, bands_all, timestamps)
+        means = _compute_means(band_name, cluster_id, labels_monthly, bands_all, timestamps)
         line, = ax.plot(timestamps, means, alpha=0.3, linewidth=1)
         if rolling_window is not None:
             ax.plot(timestamps, apply_rolling(means, rolling_window), label=f'Cluster {cluster_id}',
@@ -220,22 +331,18 @@ def plot_band_cluster_timeseries(model_type,
                  + (f' (rolling {rolling_window})' if rolling_window else ''))
     ax.grid(True, alpha=0.3)
     ax.legend(loc='upper left')
-
-    if rolling_window is not None:
-        png_name = f'{model_type}_band_{band_name}_RA_timeseries_{config.RUN_NAME}.png'
-    else:
-        png_name = f'{model_type}_band_{band_name}_timeseries_{config.RUN_NAME}.png'
-
+    
     plt.tight_layout()
-    plt.savefig(pjoin(config.FIGURES_DIR, png_name), dpi=300, bbox_inches='tight')
+    plt.savefig(pjoin(config.FIGURES_DIR, file_name), dpi=300, bbox_inches='tight')
     plt.show()
 
 
 
-def plot_cluster_band_timeseries(model_type, 
+def plot_cluster_band_timeseries(file_name,
+                                 model_type, 
                                  cluster_id, 
                                  index_bands_to_plot,
-                                 spatial_labels_monthly,
+                                 labels_monthly,
                                  bands_all, 
                                  timestamps, 
                                  x_minmax=tuple(),
@@ -249,16 +356,13 @@ def plot_cluster_band_timeseries(model_type,
     if raw_bands_to_plot is not None:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
-        xmin = pd.Timestamp(x_minmax[0])
-        xmax = pd.Timestamp(x_minmax[1])
-
         if x_minmax:
             xmin = float(mdates.date2num(pd.Timestamp(x_minmax[0])))
             xmax = float(mdates.date2num(pd.Timestamp(x_minmax[1])))
             ax2.axvspan(xmin=xmin, xmax=xmax, color='red', alpha=0.2, zorder=1)
 
         for band_name in raw_bands_to_plot:
-            means = _compute_means(band_name, cluster_id, spatial_labels_monthly, bands_all, timestamps)
+            means = _compute_means(band_name, cluster_id, labels_monthly, bands_all, timestamps)
             ax1.plot(timestamps, means, alpha=0.3, linewidth=1, color=None)
             if rolling_window is not None:
                 ax1.plot(timestamps, apply_rolling(means, rolling_window), label=band_name, marker='o', markersize=3)
@@ -266,7 +370,7 @@ def plot_cluster_band_timeseries(model_type,
                 ax1.plot(timestamps, means, label=band_name, marker='o', markersize=3)
 
         for band_name in index_bands_to_plot:
-            means = _compute_means(band_name, cluster_id, spatial_labels_monthly, bands_all, timestamps)
+            means = _compute_means(band_name, cluster_id, labels_monthly, bands_all, timestamps)
             ax2.plot(timestamps, means, alpha=0.3, linewidth=1)
             if rolling_window is not None:
                 ax2.plot(timestamps, apply_rolling(means, rolling_window), label=band_name, marker='o', markersize=3, linestyle='--')
@@ -295,7 +399,7 @@ def plot_cluster_band_timeseries(model_type,
             ax2.axvspan(xmin=xmin, xmax=xmax, color='red', alpha=0.2, zorder=1)
 
         for band_name in index_bands_to_plot:
-            means = _compute_means(band_name, cluster_id, spatial_labels_monthly, bands_all, timestamps)
+            means = _compute_means(band_name, cluster_id, labels_monthly, bands_all, timestamps)
             ax2.plot(timestamps, means, alpha=0.3, linewidth=1)
             if rolling_window is not None:
                 ax2.plot(timestamps, apply_rolling(means, rolling_window), label=band_name, marker='o', markersize=3, linestyle='--')
@@ -310,11 +414,6 @@ def plot_cluster_band_timeseries(model_type,
         ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    
-    if rolling_window is not False:
-        png_name = f'{model_type}_cluster_{cluster_id}_RA_timeseries_{config.RUN_NAME}.png'
-    else:
-        png_name = f'{model_type}_cluster_{cluster_id}_timeseries_{config.RUN_NAME}.png'
         
-    plt.savefig(pjoin(config.FIGURES_DIR, png_name), dpi=300, bbox_inches='tight')
+    plt.savefig(pjoin(config.FIGURES_DIR, file_name), dpi=300, bbox_inches='tight')
     plt.show()
