@@ -117,25 +117,43 @@ def cache_spatial(name, compute_fn, force_recompute=False):
     return result
 
 
-def cache_predictions(name, compute_fn, force_recompute=False):
-    """Load predictions (labels + probs) from cache if exist, otherwise compute and save."""
-    labels_path = pjoin(INTERIM_DIR, f'{name}_labels.npy')
-    probs_path = pjoin(INTERIM_DIR, f'{name}_probs.npy')
-    
-    if os.path.exists(labels_path) and os.path.exists(probs_path) and not force_recompute:
-        print(f"[EXISTS] Loading cached predictions {name} from interim/")
-        labels = np.load(labels_path)
-        probs = np.load(probs_path)
+def cache_predictions(name, compute_fn, model_type, force_recompute=False):
+    """Load predictions (labels and/or probs) from cache if exist, otherwise compute and save."""
+    if model_type == "gmm":
+        labels_path = pjoin(INTERIM_DIR, f'{name}_labels.npy')
+        probs_path = pjoin(INTERIM_DIR, f'{name}_probs.npy')
+
+        if os.path.exists(labels_path) and os.path.exists(probs_path) and not force_recompute:
+            print(f"[EXISTS] Loading cached predictions {name} from interim/")
+            labels = np.load(labels_path)
+            probs = np.load(probs_path)
+            return labels, probs
+        
+        print(f"[MISSING] No cache found for {name}")
+        labels, probs = compute_fn()
+        np.save(labels_path, labels)
+        np.save(probs_path, probs)
+        print(f" - Saved predictions {name} to interim/")
         return labels, probs
     
-    print(f"[MISSING] No cache found for {name}")
-    labels, probs = compute_fn()
-    np.save(labels_path, labels)
-    np.save(probs_path, probs)
-    print(f" - Saved predictions {name} to interim/")
-    return labels, probs
+    elif model_type == "kmeans":
+        labels_path = pjoin(INTERIM_DIR, f'{name}_labels.npy')
 
-def cache_spatial_timeseries(name, compute_fn, timestamps, reference_band, force_recompute=False):
+        if os.path.exists(labels_path) and not force_recompute:
+            print(f"[EXISTS] Loading cached predictions {name} from interim/")
+            labels = np.load(labels_path)
+            return labels
+        
+        print(f"[MISSING] No cache found for {name}")
+        labels = compute_fn()
+        np.save(labels_path, labels)
+        print(f" - Saved predictions {name} to interim/")
+        return labels
+    
+    else:
+        raise ValueError("[ERROR] Please provide a valid model_type ('gmm' or 'kmeans')")
+
+def cache_spatial_timeseries(name, compute_fn, timestamps, ref_band, force_recompute=False):
     """
     Load a spatial timeseries from cache if it exists, otherwise compute and save.
     
@@ -145,7 +163,7 @@ def cache_spatial_timeseries(name, compute_fn, timestamps, reference_band, force
     """
 
     npy_path = pjoin(INTERIM_DIR, f'{name}_spatial.npy')
-    tifs_dir = pjoin(config.MODELS_DIR, name)
+    tifs_dir = pjoin(config.INTERIM_DIR, name)
     os.makedirs(tifs_dir, exist_ok=True)
 
     if os.path.exists(npy_path) and not force_recompute:
@@ -174,7 +192,7 @@ def cache_spatial_timeseries(name, compute_fn, timestamps, reference_band, force
         if not os.path.exists(tif_path) or force_recompute:
             spatial = np.flipud(arr[t_idx].astype(np.float32))
             da = xr.DataArray(spatial, dims=['y', 'x'])
-            da.rio.write_crs(reference_band.rio.crs, inplace=True)
+            da.rio.write_crs(ref_band.rio.crs, inplace=True)
             da.rio.write_transform(inplace=True)
             da.rio.to_raster(tif_path)
             missing += 1

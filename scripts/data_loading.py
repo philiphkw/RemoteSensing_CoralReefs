@@ -7,23 +7,27 @@ from glob import glob
 from tqdm import tqdm
 from os.path import join as pjoin
 import scripts.config as config
-from scripts.lyzenga import dem_resampling, depth_regression_data, apply_lyzenga
+import scripts.lyzenga as lyzenga
+
+FILE_PATTERN = r'raw\PSScene\*_3B_AnalyticMS_SR_8b_clip*.tif'
 
 def load_stack():
-    files = sorted(glob(pjoin(config.DATA_DIR, config.FILE_PATTERN)))
+    """Loading spectral data, adding time dimension, and stacking into array"""
+    files = sorted(glob(pjoin(config.DATA_DIR, FILE_PATTERN)))
     dates = [pd.Timestamp(f.split('\\')[-1][:8]) for f in files]
 
     print(" - Loading and stacking data")
     arrays = []
     for f, date in tqdm(zip(files, dates), total=len(files), desc="   - "):
         da = rioxarray.open_rasterio(f)
-        da = da.assign_coords(time=date)
+        da = da.assign_coords(time=date) # Adding time coordinates
         arrays.append(da)
 
     return xr.concat(arrays, dim='time')
 
 
 def extract_bands(stack):
+    """Extract raw bands from stacked array"""
     print(" - Extracting raw bands")
     band_dict = {1: "cb", 2: "blue", 4: "green", 5: "yellow", 6: "red", 8: "nir"}
     raw_bands = {}
@@ -34,6 +38,7 @@ def extract_bands(stack):
 
 
 def load_dem():
+    """Loading digital elevation model data"""
     print(" - Loading DEM...")
     dem_path = pjoin(config.DATA_DIR, config.DEM_FILE)
     dem_file = rioxarray.open_rasterio(dem_path).squeeze().astype(float)
@@ -41,6 +46,15 @@ def load_dem():
 
 
 def calculate_indices(raw_bands, di_bands=None):
+    """
+    Calculating spectral indices for coral reef analysis using raw bands.
+
+    Optional: 
+    Use depth invariant (DI) bottom index created using Lyzenga Algorithm 
+    to cancel out water depth variations while preserving differences
+    in bottom type. Otherwise it will default to raw bands without depth
+    correction.
+    """
     print(" - Calculating spectral indices")
     cb    = raw_bands["cb"]
     nir   = raw_bands["nir"]
@@ -50,13 +64,13 @@ def calculate_indices(raw_bands, di_bands=None):
     indices = {"ndavi": ndavi}
     print("   - Calculated: NDAVI")
 
-    if di_bands is not None:
+    if di_bands is not None and config.LYZENGA_ALG == True:
         # Brightness from DI bands = depth-invariant bottom reflectance intensity
         di_vals = list(di_bands.values())
         brightness_di = sum(di_vals) / len(di_vals)
         indices["brightness-di"] = brightness_di
         print("   - Calculated: Brightness-DI")
-        # blue_green is dropped — di_cb_green already captures this more cleanly
+        # blue_green ratio is dropped — di-cb-green already captures this more cleanly
 
         del di_vals, brightness_di 
         gc.collect()
@@ -80,29 +94,36 @@ def calculate_indices(raw_bands, di_bands=None):
     return indices
 
 
-def compute_bands_all(lyzenga=True):
+def compute_bands_all():
+    """
+    Full pipeline for compiling all necessary bands & indices.
+
+    Pipeline:
+    Stack -> Extract raw bands -> Apply Lyzenga correction -> Calc indices -> Compile raw + corrected + indices
+    """
     stack = load_stack()
     raw_bands = extract_bands(stack)
+
     del stack
     gc.collect()
 
-    if lyzenga == True:
+    if config.LYZENGA_ALG == True:
+        # Pipeline for computing all bands with lyzenga-corrected bands
         dem = rioxarray.open_rasterio(pjoin(config.DATA_DIR, rf'external\{config.DEM_FILE}'))
-        dem_resampled = dem_resampling(raw_bands, dem)
+        dem_resampled = lyzenga.dem_resampling(raw_bands, dem)
 
         del dem
         gc.collect()
 
-        depth_regression, regression_pixels = depth_regression_data(raw_bands, dem_resampled)
+        depth_regression, regression_pixels = lyzenga.depth_regression_data(raw_bands, dem_resampled)
 
         del dem_resampled
         gc.collect()
 
         print(" - Applying Lyzenga with full bathymetry calibration...")
-        di_bands = apply_lyzenga(
+        di_bands = lyzenga.apply_lyzenga(
             raw_bands=raw_bands,
             dw_values=config.LYZENGA_DW_VALUES,
-            ki_kj_ratios=None,
             regression_pixels=regression_pixels,
             use_bathy=True,
             bathy=depth_regression

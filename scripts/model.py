@@ -6,6 +6,7 @@ import rioxarray
 import xarray as xr
 import pandas as pd
 from tqdm import tqdm
+from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import silhouette_score
 from sklearn.model_selection import train_test_split
@@ -16,7 +17,7 @@ import scripts.config as config
 INTERIM_DIR = pjoin(config.DATA_DIR, 'interim')
 os.makedirs(INTERIM_DIR, exist_ok=True)
 
-def sample_data(data, perc_sample=None, n_samples=100_000, random_state=42):
+def sample_data(data, perc_sample=None, n_samples=100_000, random_state=config.RANDOM_STATE):
     """Randomly sample n_samples rows from data for fast GMM prototyping."""
     
     if perc_sample:
@@ -32,22 +33,56 @@ def sample_data(data, perc_sample=None, n_samples=100_000, random_state=42):
     print(f"      - Sampled {n_samples:,} / {len(data):,} rows (i.e. pixels) ({100*n_samples/len(data):.1f}%)")
     return data[idx]
 
-def train_gmm(data, n_samples=None, n_components=config.GMM_COMPONENTS, n_init=config.GMM_N_INIT):
-    print(" - Training GMM...")
-    print(f"    - n_components: {n_components}, n_init: {n_init}")
-    gmm = GaussianMixture(n_components=n_components, random_state=42, n_init=n_init)
+# def train_gmm(data, n_components, n_samples=None, random_state=1, n_init=config.GMM_N_INIT):
+#     print(" - Training GMM...")
+#     print(f"    - n_components: {n_components}, n_init: {n_init}")
+#     gmm = GaussianMixture(
+#         n_components=n_components, 
+#         random_state=random_state, 
+#         n_init=n_init
+#     )
+#     t0 = time.time()
+#     if n_samples:
+#         data_sample = sample_data(data, n_samples=n_samples)
+#         gmm.fit(data_sample)
+#     else:
+#         gmm.fit(data)
+
+#     print(f"    - Training complete in {time.time()-t0:.1f}s")
+#     return gmm
+
+# def train_kmeans(data,  n_clusters, n_samples=None, random_state=1, n_init=config.KMEANS_N_INIT):
+#     print(" - Training Kmeans...")
+#     print(f"    - n_clusters: {n_clusters}, n_init: {n_init}")
+#     kmeans = KMeans(
+#         n_clusters=n_clusters,
+#         random_state=random_state,
+#         n_init=config.KMEANS_N_INIT
+#     )
+#     t0 = time.time()
+#     if n_samples:
+#         data_sample = sample_data(data, n_samples=n_samples)
+#         kmeans.fit(data_sample)
+#     else:
+#         kmeans.fit(data)
+
+#     print(f"    - Training complete in {time.time()-t0:.1f}s")
+#     return kmeans
+
+
+def train_model(data, model, n_samples=None):
+    print(" - Training Model...")
     t0 = time.time()
     if n_samples:
         data_sample = sample_data(data, n_samples=n_samples)
-        gmm.fit(data_sample)
+        model.fit(data_sample)
     else:
-        gmm.fit(data)
+        model.fit(data)
 
     print(f"    - Training complete in {time.time()-t0:.1f}s")
-    return gmm
+    return model
 
-
-def predict(gmm, data):
+def predict_gmm(gmm, data):
     t0 = time.time()
     print(" - Predicting labels...")
     labels = gmm.predict(data)
@@ -55,11 +90,18 @@ def predict(gmm, data):
     print(f" - Predicting complete in {time.time()-t0:.1f}s")
     return labels, probs
 
+def predict_kmeans(kmeans, data):
+    t0 = time.time()
+    print(" - Predicting labels...")
+    labels = kmeans.predict(data)
+    print(f" - Predicting complete in {time.time()-t0:.1f}s")
+    return labels
 
-def print_cluster_distribution(labels):
+
+def print_cluster_distribution(labels, model_type):
     labels_flat = labels.flatten()
     total = len(labels_flat)
-    print("Cluster distribution:")
+    print(f"{model_type.upper()} Cluster distribution:")
     for i in range(int(labels_flat.max()) + 1):
         count = int(np.sum(labels_flat == i))
         print(f" - Cluster {i}: {count:,} pixels ({100*count/total:.1f}%)")
@@ -141,14 +183,14 @@ def save_labels(labels, mask, reference_band, name, num_timesteps=None):
 
     return spatial
 
-def save_labels_timeseries(labels, mask, reference_band, name, num_timesteps, timestamps):
+def save_labels_timeseries(labels, mask, ref_band, name, num_timesteps, timestamps):
     """Save one GeoTIFF per timestep instead of majority-voting across time."""
     t0 = time.time()
     print(" - Saving monthly labels...")
     os.makedirs(pjoin(config.MODELS_DIR, name), exist_ok=True)
 
-    x_size = reference_band.shape[1]
-    y_size = reference_band.shape[2]
+    x_size = ref_band.shape[1]
+    y_size = ref_band.shape[2]
 
     labels_full = np.full(len(mask), np.nan, dtype=np.float32)
     labels_full[mask] = labels
@@ -162,11 +204,11 @@ def save_labels_timeseries(labels, mask, reference_band, name, num_timesteps, ti
         spatial = np.flipud(spatial)
 
         da = xr.DataArray(spatial, dims=['y', 'x'])
-        da.rio.write_crs(reference_band.rio.crs, inplace=True)
+        da.rio.write_crs(ref_band.rio.crs, inplace=True)
         da.rio.write_transform(inplace=True)
 
         ts_str = pd.Timestamp(ts).strftime('%Y%m')
-        da.rio.to_raster(pjoin(config.MODELS_DIR, rf"{name}\{name}_{ts_str}.tif"))
+        da.rio.to_raster(pjoin(config.INTERIM_DIR, rf"{name}\{name}_{ts_str}.tif"))
         print(f"   - Saved {name}_{ts_str}.tif")
     print(f"Saving labels complete in {time.time()-t0:.1f}s")
     
