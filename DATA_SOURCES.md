@@ -41,6 +41,9 @@ This document is dedicated for citing the sources of external data.
 - **Spatial Resolution:** ~3 m GSD
 - **Temporal Resolution:** Near-daily revisit
 
+
+![reports/figures/aoi_rgb.png](reports\figures\aoi_rgb.png)
+
 &nbsp;
 
 # Digital Elevation Model (DEM):
@@ -97,4 +100,4 @@ This document is dedicated for citing the sources of external data.
 - **Reference Classification**
     - Geomorphic zones based on Roelfsema et al. (2018), doi:10.1016/j.rse.2018.02.005
 
-![reports/figures/dem_aoi_B(2022,2023)_k10_init3_MS_median_bathy_11F.png](reports\figures\dem_aoi_B(2022,2023)_k10_init3_MS_median_bathy_11F.png)
+![reports/figures/aoi_dem.png](reports\figures\aoi_dem.png)

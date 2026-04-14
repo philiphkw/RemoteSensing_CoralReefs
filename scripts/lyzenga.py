@@ -13,8 +13,10 @@ import gc
 import numpy as np
 import xarray as xr
 import rioxarray
+from scipy import interpolate
 import scripts.config as config
 from itertools import combinations
+from rasterio.enums import Resampling
 from sklearn.linear_model import LinearRegression
 
 
@@ -24,7 +26,14 @@ def dem_resampling(raw_bands, dem):
     print(" - Resampling DEM to match raw bands...")
     aoi = raw_bands['cb'].isel(time=0)
 
-    # Extract bouding box of AOI
+    # Mask 0 values as NaN
+    aoi_masked = aoi.copy()
+    aoi_masked.values[aoi_masked.values == 0] = np.nan
+
+    # Create mask
+    aoi_mask = np.isfinite(aoi_masked.values)
+
+    # Extract bounding box of AOI
     minx = float(aoi.x.min())
     maxx = float(aoi.x.max())
     miny = float(aoi.y.min())
@@ -34,19 +43,23 @@ def dem_resampling(raw_bands, dem):
     print("   - Clipping DEM to area of interest")
     dem_aoi = dem.rio.clip_box(minx, miny, maxx, maxy)
 
-    # Mask outliers after resampling, not before
-    print("   - Removing extreme outliers from DEM")
+    # Mask NoData values
+    print("   - Masking NoData values")
     dem_resampled = dem_aoi.copy().astype(float)
-    dem_resampled.values[dem_resampled.values < config.DEM_OUTLIER_THRESHOLD] = np.nan
+    dem_resampled.values[dem_resampled.values == dem.rio.nodata] = np.nan
 
     # Resample DEM to match resolution of raw bands
     print("   - Matching DEM resolution to raw bands")
-    dem_resampled = dem_resampled.rio.reproject_match(raw_bands['cb'])
+    dem_resampled = dem_resampled.rio.reproject_match(aoi, resampling=Resampling.nearest)
+
+    # Squeeze band dimension and apply mask
+    dem_data = dem_resampled.squeeze().values
+    dem_data[~aoi_mask] = np.nan
 
     del dem_aoi
     gc.collect()
 
-    return dem_resampled
+    return dem_data
 
 def depth_regression_data(raw_bands, dem_resampled):
     """
