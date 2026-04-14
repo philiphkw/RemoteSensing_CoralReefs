@@ -43,7 +43,7 @@ To make matters more complex, when working with more than two bands you now have
 
 Rather than rotating axes in 2D, you now need to identify the depth direction in this $N$-dimensional space and project away from it. The result is a set of depth-invariant indices, one for each pair of bands you can extract from your $N$ bands.
 
-## Simplification
+## Algorithm Simplification
 For this research we simplify the lyzenga algorithm in two ways:
 
 1. We use a Digital Elevation Model (DEM) rather than using the covariance method becuase that is only necessary if depth is not already given (which in most cases it isn't).
