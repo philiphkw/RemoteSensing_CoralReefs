@@ -24,10 +24,11 @@ Extreme values were reduced using percentile clipping at the 2nd and 98th percen
 
 <img src="reports/figures/methodology-flowchart.jpg" />
 
-## Results & Report
+## Results & Reports
 - The general results of this research can be found in [reports/figures](reports/figures). 
 - The model validation results can be found in [data/processed/validation_results](data/processed/validation_results). 
-- The final research report can be found at [reports/Coral-Reefs-Unusp-ML.pdf](reports/Coral-Reefs-Unusp-ML.pdf). 
+- The final research report can be found at [reports/Coral-Reefs-Unusp-ML.pdf](reports/Coral-Reefs-Unusp-ML.pdf).
+- A detailed explanation on how the Lyzenga Algorithm works can be found at [reports/Lyzenga_alg_details.md](reports/Lyzenga_alg_details.md)
 
 ## How to Use
 
