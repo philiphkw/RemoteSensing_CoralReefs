@@ -18,7 +18,7 @@ The temporal boundaries are between January 2022 and December 2025 with each mon
 
 Imagery was acquired by ‘SuperDove’ tool which were preprocessed according to PlanetScope-Ortho-Analytic-8B-SR, resulting in images that are orthorectified, and display scaled Surface Reflectance comparable to Landsat images (Moon et al., 2021; Planet.com, 2025). 
 
-Extreme values were reduced using percentile clipping at the 2nd and 98th percentiles. As varying water depths influence the absorption of different wavelengths unevenly, the spectral bands of Coastal blue, blue and green were corrected for water depth using the Lyzenga algorithm (Lyzenga, 1978). For more details on the Lyzenga Algorithm, please refer to [lyzenga_alg_details.md](reports/Lyzenga_alg_details.md)
+Extreme values were reduced using percentile clipping at the 2nd and 98th percentiles. As varying water depths influence the absorption of different wavelengths unevenly, the spectral bands of coastal blue, blue, and green were corrected for water depth using the Lyzenga algorithm (Lyzenga, 1978). For more details on the Lyzenga Algorithm, please refer to [lyzenga_alg_details.md](reports/Lyzenga_alg_details.md).
 
 ### Method
 
@@ -36,6 +36,9 @@ Extreme values were reduced using percentile clipping at the 2nd and 98th percen
 - [models_notebook.ipynb](notebooks/models_notebook.ipynb) - Finalized notebook with the entire pipeline as visualized in the flowchart, excluding validation results. 
 - [validation_results.ipynb](notebooks/validation_results.ipynb) - Notebook containing cluster validation results.
 
+### Models
+The models trained on the bands and indices can be found in [models/](models). Due to github's file size limits, only the GMM model could be uploaded. The K-Means model will need to be retrained (which may take between 20 - 60 minutes depending on the hardware of the device).
+
 ### Scripts 
 - [cache.py](scripts/cache.py) - For saving and reloading intermediary files and models to avoid having to rerun time-consuming pipelines
 - [config.py](scripts/config.py) - For grouping different (hyper)parameters in one location for improved oversight and efficient changing.
@@ -51,7 +54,7 @@ Extreme values were reduced using percentile clipping at the 2nd and 98th percen
   - [scenes_collection.py](scripts/extra/scenes_collection.py) - Script used to compile metadata about the PSScenes into one file.
 
 ### File Naming Scheme
-The results of this research has been stored in [reports/figures](reports/figures). The file names of these results contain the metadata about what type of run it was obtained from. The naming scheme follows the following structure:
+The file names for the models and results contain the metadata about what type of run it was obtained from. The naming scheme follows the following structure:
 
 1. `General Info`
 2. `Model` - Either `gmm` or `kmeans`
