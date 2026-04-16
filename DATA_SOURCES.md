@@ -42,7 +42,7 @@ This document is dedicated for citing the sources of external data.
 - **Temporal Resolution:** Near-daily revisit
 
 
-![reports/figures/aoi_rgb.png](reports\figures\aoi_rgb.png)
+![reports/figures/aoi_rgb.png](reports/figures/aoi_rgb.png)
 
 &nbsp;
 
@@ -100,4 +100,4 @@ This document is dedicated for citing the sources of external data.
 - **Reference Classification**
     - Geomorphic zones based on Roelfsema et al. (2018), doi:10.1016/j.rse.2018.02.005
 
-![reports/figures/aoi_dem.png](reports\figures\aoi_dem.png)
+![reports/figures/aoi_dem.png](reports/figures/aoi_dem.png)
