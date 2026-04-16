@@ -33,17 +33,23 @@ The models trained on the bands and indices can be found in [models/](models). D
 ### File Naming Scheme
 The file names for the models and results contain the metadata about what type of run it was obtained from. The naming scheme follows the following structure:
 
-1. `General Info`
-2. `Model` - Either `gmm` or `kmeans`
-3. `Training Year(s)` - 'B' stands for 'Baseline
-4. `Number of clusters`
-5. `Temporal Aggregation` - Whether the data is aggregated by month (`MS`) or year (`YS`)
-6. `Data Aggregation` - How the temporal data is aggregated (using `medain`, `mean`, `max`, `min`, etc.)
-7. `Bathy` - Whether it has been corrected for depth using bathymetric data
+1. `General Info` - Sometimes multiple parts e.g. `cluster_means`
+2. `Rolling Average` - If rolling average used, else nothing.
+3. `Model` - Either `gmm` or `kmeans` if results based on trained model, else nothing.
+4. `Training Year(s)` - 'B' stands for 'Baseline Year(s)' e.g. `B(2022,2023)`
+5. `Number of clusters`
+6. `Temporal Aggregation` - Whether the data is aggregated by month (`MS`) or year (`YS`)
+7. `Data Aggregation` - How the temporal data is aggregated (using `medain`, `mean`, `max`, `min`, etc.)
+8. `Bathy` - Whether it has been corrected for depth using bathymetric data
+9. `Number of features` - How many features the model was trained on.
 
 Final result:
 
-`file_name = <1>_<2>_<3>_<4>_<5>_<6>_<7>.ext`
+`file_name = <1>_<2>_<3>_<4>_<5>_<6>_<7>_<8>_<9>.ext`
+
+Example:
+
+`ndavi_RA_gmm_B(2022,2023)_k10_MS_median_bathy_11F.png`
 
 ## Data & Methods
 
